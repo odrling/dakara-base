@@ -83,7 +83,7 @@ class GetFileTestCase(TestCase):
         """Test to access a real file
         """
         # call the function
-        result = get_file("dakara_base.tests.resources", "dummy")
+        result = get_file("tests.resources", "dummy")
 
         # assert the result
         path = MODULE_PATH / "resources" / "dummy"

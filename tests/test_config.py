@@ -23,7 +23,7 @@ class LoadConfigTestCase(TestCase):
 
     def setUp(self):
         # create config path
-        self.config_path = get_file("dakara_base.tests.resources", "config.yaml")
+        self.config_path = get_file("tests.resources", "config.yaml")
 
     def test_success(self):
         """Test to load a config file

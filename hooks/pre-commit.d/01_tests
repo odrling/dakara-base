@@ -1,4 +1,4 @@
 #!/bin/bash
 
 echo "Running tests for the Dakara base module"
-python -m unittest
+python setup.py test
