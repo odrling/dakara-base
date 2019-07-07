@@ -1,7 +1,6 @@
 import json
 import logging
 
-import requests
 from furl import furl
 from websocket import (
     WebSocketApp,
@@ -67,7 +66,9 @@ class WebSocketClient(WorkerSafeTimer):
             self.header = header
             self.websocket = None
             self.retry = False
-            self.reconnect_interval = config.get("reconnect_interval", RECONNECT_INTERVAL)
+            self.reconnect_interval = config.get(
+                "reconnect_interval", RECONNECT_INTERVAL
+            )
 
         except KeyError as error:
             raise ParameterError(

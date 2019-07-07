@@ -164,7 +164,9 @@ class HTTPClient:
         """
         try:
             # make the request
-            return self.send_request_raw(*args, headers=self.get_token_header(), **kwargs)
+            return self.send_request_raw(
+                *args, headers=self.get_token_header(), **kwargs
+            )
 
         # manage request error
         except ResponseError:

@@ -1,6 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch, MagicMock, ANY
-import logging
+from unittest.mock import patch, ANY
 
 from yaml.parser import ParserError
 from path import Path

@@ -5,7 +5,14 @@ from queue import Queue
 
 from websocket import WebSocketBadStatusException, WebSocketConnectionClosedException
 
-from dakara_base.websocket_client import connected, NotConnectedError, WebSocketClient, ParameterError, AuthenticationError, NetworkError
+from dakara_base.websocket_client import (
+    connected,
+    NotConnectedError,
+    WebSocketClient,
+    ParameterError,
+    AuthenticationError,
+    NetworkError,
+)
 
 
 class ConnectedTestCase(TestCase):
@@ -99,12 +106,7 @@ class WebSocketClientTestCase(TestCase):
         """
         # create a client
         client = WebSocketClient(
-            self.stop,
-            self.errors,
-            {
-                "address": self.address
-            },
-            route="ws"
+            self.stop, self.errors, {"address": self.address}, route="ws"
         )
 
         # assert the client
@@ -112,13 +114,7 @@ class WebSocketClientTestCase(TestCase):
 
         # create a secured client
         client_secured = WebSocketClient(
-            self.stop,
-            self.errors,
-            {
-                "address": self.address,
-                "ssl": True,
-            },
-            route="ws"
+            self.stop, self.errors, {"address": self.address, "ssl": True}, route="ws"
         )
 
         # assert the client
@@ -145,9 +141,10 @@ class WebSocketClientTestCase(TestCase):
             self.client.exit_worker()
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "DEBUG:dakara_base.websocket_client:Aborting websocket connection",
-        ])
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_base.websocket_client:Aborting websocket connection"],
+        )
 
         # assert the call
         mocked_abort.assert_called_with()
@@ -164,9 +161,10 @@ class WebSocketClientTestCase(TestCase):
         self.assertFalse(self.client.retry)
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "INFO:dakara_base.websocket_client:Websocket connected to server"
-        ])
+        self.assertListEqual(
+            logger.output,
+            ["INFO:dakara_base.websocket_client:Websocket connected to server"],
+        )
 
         # assert the call
         mocked_on_connected.assert_called_with()
@@ -195,9 +193,10 @@ class WebSocketClientTestCase(TestCase):
         self.assertFalse(self.client.retry)
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "INFO:dakara_base.websocket_client:Websocket disconnected from server",
-        ])
+        self.assertListEqual(
+            logger.output,
+            ["INFO:dakara_base.websocket_client:Websocket disconnected from server"],
+        )
 
         # assert the call
         mocked_create_timer.assert_not_called()
@@ -222,15 +221,16 @@ class WebSocketClientTestCase(TestCase):
         self.assertTrue(self.client.retry)
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "ERROR:dakara_base.websocket_client:Websocket connection lost",
-            "WARNING:dakara_base.websocket_client:Trying to reconnect in 1 s",
-        ])
+        self.assertListEqual(
+            logger.output,
+            [
+                "ERROR:dakara_base.websocket_client:Websocket connection lost",
+                "WARNING:dakara_base.websocket_client:Trying to reconnect in 1 s",
+            ],
+        )
 
         # assert the different calls
-        mocked_create_timer.assert_called_with(
-            self.reconnect_interval, self.client.run
-        )
+        mocked_create_timer.assert_called_with(self.reconnect_interval, self.client.run)
         mocked_create_timer.return_value.start.assert_called_with()
         mocked_on_connection_lost.assert_called_with()
 
@@ -257,9 +257,13 @@ class WebSocketClientTestCase(TestCase):
             self.client.on_message(event)
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "ERROR:dakara_base.websocket_client:Unexpected message from the server: '{}'".format(event),
-        ])
+        self.assertListEqual(
+            logger.output,
+            [
+                "ERROR:dakara_base.websocket_client:"
+                "Unexpected message from the server: '{}'".format(event)
+            ],
+        )
 
     def test_on_message_failed_type(self):
         """Test the on message method when event has an unknown type
@@ -271,9 +275,13 @@ class WebSocketClientTestCase(TestCase):
             self.client.on_message(event)
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "ERROR:dakara_base.websocket_client:Event of unknown type received 'dummy'"
-        ])
+        self.assertListEqual(
+            logger.output,
+            [
+                "ERROR:dakara_base.websocket_client:"
+                "Event of unknown type received 'dummy'"
+            ],
+        )
 
     def test_on_error_closing(self):
         """Test the callback on error when the program is closing
@@ -308,9 +316,10 @@ class WebSocketClientTestCase(TestCase):
         self.assertTrue(self.errors.empty())
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "ERROR:dakara_base.websocket_client:Websocket: error message"
-        ])
+        self.assertListEqual(
+            logger.output,
+            ["ERROR:dakara_base.websocket_client:Websocket: error message"],
+        )
 
     def test_on_error_authentication(self):
         """Test the callback on error when the authentication is refused
@@ -360,9 +369,10 @@ class WebSocketClientTestCase(TestCase):
         self.assertTrue(self.errors.empty())
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "WARNING:dakara_base.websocket_client:Unable to talk to the server"
-        ])
+        self.assertListEqual(
+            logger.output,
+            ["WARNING:dakara_base.websocket_client:Unable to talk to the server"],
+        )
 
     def test_on_error_route(self):
         """Test the callback on error when the route is invalid
@@ -449,7 +459,14 @@ class WebSocketClientTestCase(TestCase):
     @patch.object(WebSocketClient, "on_close")
     @patch.object(WebSocketClient, "on_open")
     @patch("dakara_base.websocket_client.WebSocketApp")
-    def test_run(self, mock_websocket_app_class, mocked_on_open, mocked_on_close, mocked_on_message, mocked_on_error):
+    def test_run(
+        self,
+        mock_websocket_app_class,
+        mocked_on_open,
+        mocked_on_close,
+        mocked_on_message,
+        mocked_on_error,
+    ):
         """Test to create and run the connection
         """
         # pre assert
@@ -460,9 +477,10 @@ class WebSocketClientTestCase(TestCase):
             self.client.run()
 
         # assert the effect on logger
-        self.assertListEqual(logger.output, [
-            "DEBUG:dakara_base.websocket_client:Preparing websocket connection",
-        ])
+        self.assertListEqual(
+            logger.output,
+            ["DEBUG:dakara_base.websocket_client:Preparing websocket connection"],
+        )
 
         # assert the call
         mock_websocket_app_class.assert_called_with(

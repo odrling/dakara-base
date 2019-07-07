@@ -2,7 +2,6 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock, ANY
 
 from requests.exceptions import RequestException
-from path import Path
 
 from dakara_base.http_client import (
     HTTPClient,
@@ -78,7 +77,7 @@ class HTTPClientTestCase(TestCase):
 
         # create a ServerHTTPConnection instance
         self.client = HTTPClient(
-            {"url": self.url, "login": self.login, "password": self.password},
+            {"url": self.url, "login": self.login, "password": self.password}
         )
 
     def set_token(self):
@@ -105,12 +104,8 @@ class HTTPClientTestCase(TestCase):
         """
         # create a client
         client = HTTPClient(
-            {
-                "address": self.address,
-                "login": self.login,
-                "password": self.password,
-            },
-            route="api"
+            {"address": self.address, "login": self.login, "password": self.password},
+            route="api",
         )
 
         # assert the client
@@ -124,7 +119,7 @@ class HTTPClientTestCase(TestCase):
                 "password": self.password,
                 "ssl": True,
             },
-            route="api"
+            route="api",
         )
 
         # assert the secured client
@@ -159,14 +154,14 @@ class HTTPClientTestCase(TestCase):
         self.assertListEqual(
             logger.output,
             [
-                "DEBUG:dakara_base.http_client:Sending POST request to http://www.example.com/api/endpoint"
+                "DEBUG:dakara_base.http_client:"
+                "Sending POST request to http://www.example.com/api/endpoint"
             ],
         )
 
         # assert the call
         mock_post.assert_called_with(
-            "http://www.example.com/api/endpoint",
-            data={"content": "test"},
+            "http://www.example.com/api/endpoint", data={"content": "test"}
         )
 
     def test_send_request_raw_error_method(self):
@@ -242,7 +237,9 @@ class HTTPClientTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_base.http_client", "DEBUG"):
             with self.assertRaises(MyError):
-                self.client.send_request_raw("post", "endpoint", function_on_error=on_error)
+                self.client.send_request_raw(
+                    "post", "endpoint", function_on_error=on_error
+                )
 
     @patch.object(HTTPClient, "send_request_raw")
     def test_send_request_successful(self, mocked_send_request_raw):
@@ -258,7 +255,7 @@ class HTTPClientTestCase(TestCase):
         mocked_send_request_raw.assert_called_with(
             "endpoint",
             headers={"Authorization": "Token token value"},
-            data={"key": "value"}
+            data={"key": "value"},
         )
 
     @patch.object(HTTPClient, "send_request_raw")
@@ -344,8 +341,7 @@ class HTTPClientTestCase(TestCase):
 
         # call assertions
         mock_post.assert_called_with(
-            self.url_login,
-            data={"username": self.login, "password": self.password},
+            self.url_login, data={"username": self.login, "password": self.password}
         )
 
         # post assertions
@@ -357,7 +353,8 @@ class HTTPClientTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_base.http_client:Authenticate to the server",
-                "DEBUG:dakara_base.http_client:Sending POST request to http://www.example.com/api/token-auth",
+                "DEBUG:dakara_base.http_client:"
+                "Sending POST request to http://www.example.com/api/token-auth",
                 "INFO:dakara_base.http_client:Login to server successful",
                 "DEBUG:dakara_base.http_client:Token: {}".format(self.token),
             ],
