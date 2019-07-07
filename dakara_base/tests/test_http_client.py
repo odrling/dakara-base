@@ -1,0 +1,415 @@
+from unittest import TestCase
+from unittest.mock import patch, MagicMock, ANY
+
+from requests.exceptions import RequestException
+from path import Path
+
+from dakara_base.http_client import (
+    HTTPClient,
+    ParameterError,
+    MethodError,
+    ResponseRequestError,
+    ResponseInvalidError,
+    AuthenticationError,
+    NotAuthenticatedError,
+    authenticated,
+)
+
+
+class AuthenticatedTestCase(TestCase):
+    """Test the `authenticated` decorator
+    """
+
+    class Authenticated:
+        def __init__(self):
+            self.token = None
+
+        @authenticated
+        def dummy(self):
+            pass
+
+    def test_authenticated_sucessful(self):
+        """Test the authenticated decorator when token is set
+        """
+        instance = self.Authenticated()
+
+        # set the token
+        instance.token = True
+
+        # call a protected method
+        instance.dummy()
+
+    def test_authenticated_error(self):
+        """Test the authenticated decorator when token is not set
+        """
+        instance = self.Authenticated()
+
+        # call a protected method
+        with self.assertRaises(NotAuthenticatedError):
+            instance.dummy()
+
+
+class HTTPClientTestCase(TestCase):
+    """Test the HTTP connection with a server
+    """
+
+    def setUp(self):
+        # create a token
+        self.token = "token value"
+
+        # create a server address
+        self.address = "www.example.com"
+
+        # create a server URL
+        self.url = "http://www.example.com/api"
+
+        # create a secured URL
+        self.url_secured = "https://www.example.com/api"
+
+        # create a server URL endpoint
+        self.url_endpoint = "http://www.example.com/api/endpoint"
+
+        # create login URL
+        self.url_login = "http://www.example.com/api/token-auth"
+
+        # create a login and password
+        self.login = "test"
+        self.password = "test"
+
+        # create a ServerHTTPConnection instance
+        self.client = HTTPClient(
+            {"url": self.url, "login": self.login, "password": self.password},
+        )
+
+    def set_token(self):
+        """Set the token to the test client
+        """
+        self.client.token = self.token
+
+    def set_mute(self):
+        """Set the client to mute communication errors when sending requests
+        """
+        self.client.mute_raise = True
+
+    def test_init_url(self):
+        """Test to create object with provided URL
+        """
+        # use the already created client object
+        self.assertEqual(self.client.server_url, self.url)
+        self.assertEqual(self.client.login, self.login)
+        self.assertEqual(self.client.password, self.password)
+        self.assertIsNone(self.client.token)
+
+    def test_init_address(self):
+        """Test to create object with provided address
+        """
+        # create a client
+        client = HTTPClient(
+            {
+                "address": self.address,
+                "login": self.login,
+                "password": self.password,
+            },
+            route="api"
+        )
+
+        # assert the client
+        self.assertEqual(client.server_url, self.url)
+
+        # create a secured client
+        client_secured = HTTPClient(
+            {
+                "address": self.address,
+                "login": self.login,
+                "password": self.password,
+                "ssl": True,
+            },
+            route="api"
+        )
+
+        # assert the secured client
+        self.assertEqual(client_secured.server_url, self.url_secured)
+
+    def test_init_missing_key(self):
+        """Test to create object with missing mandatory key
+        """
+        # try to create a client from invalid config
+        with self.assertRaises(ParameterError) as error:
+            HTTPClient({"url": self.url}, route="api")
+
+        # assert the error
+        self.assertEqual(
+            str(error.exception), "Missing parameter in server config: 'login'"
+        )
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_send_request_raw_successful(self, mock_post):
+        """Test to send a raw request with the generic method
+        """
+        # call the method
+        with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
+            self.client.send_request_raw(
+                "post",
+                "endpoint",
+                data={"content": "test"},
+                message_on_error="error message",
+            )
+
+        # assert the effect on logger
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_base.http_client:Sending POST request to http://www.example.com/api/endpoint"
+            ],
+        )
+
+        # assert the call
+        mock_post.assert_called_with(
+            "http://www.example.com/api/endpoint",
+            data={"content": "test"},
+        )
+
+    def test_send_request_raw_error_method(self):
+        """Test that a wrong method name fails for a generic raw request
+        """
+        # call the method
+        with self.assertRaises(MethodError):
+            self.client.send_request_raw(
+                "invalid",
+                "endpoint",
+                data={"content": "test"},
+                message_on_error="error message",
+            )
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_send_request_raw_error_request(self, mock_post):
+        """Test to send a raw request when there is a communication error
+        """
+        # mock the response of the server
+        mock_post.side_effect = RequestException("error")
+
+        # call the method
+        with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
+            with self.assertRaises(ResponseRequestError) as error:
+                self.client.send_request_raw(
+                    "post",
+                    "endpoint",
+                    data={"content": "test"},
+                    message_on_error="error message",
+                )
+
+        # assert the error
+        self.assertEqual(
+            str(error.exception), "Error when communicating with the server: error"
+        )
+
+        # assert the effect on logger
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_base.http_client:Sending POST request to "
+                "http://www.example.com/api/endpoint",
+                "ERROR:dakara_base.http_client:error message, communication error",
+            ],
+        )
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_send_request_raw_error_response(self, mock_post):
+        """Test to send a raw request when the response is invalid
+        """
+        # mock the response of the server
+        mock_post.return_value.ok = False
+
+        # call the method
+        with self.assertLogs("dakara_base.http_client", "DEBUG"):
+            with self.assertRaises(ResponseInvalidError):
+                self.client.send_request_raw("post", "endpoint")
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_send_request_raw_error_response_custom(self, mock_post):
+        """Test to send a raw request when the response is invalid and a error function given
+        """
+        # mock the response of the server
+        mock_post.return_value.ok = False
+
+        # create error exception and error function
+        class MyError(Exception):
+            pass
+
+        def on_error(response):
+            return MyError()
+
+        # call the method
+        with self.assertLogs("dakara_base.http_client", "DEBUG"):
+            with self.assertRaises(MyError):
+                self.client.send_request_raw("post", "endpoint", function_on_error=on_error)
+
+    @patch.object(HTTPClient, "send_request_raw")
+    def test_send_request_successful(self, mocked_send_request_raw):
+        """Test to send a successful request
+        """
+        # set the token
+        self.set_token()
+
+        # call the method
+        self.client.send_request("endpoint", data={"key": "value"})
+
+        # assert the call
+        mocked_send_request_raw.assert_called_with(
+            "endpoint",
+            headers={"Authorization": "Token token value"},
+            data={"key": "value"}
+        )
+
+    @patch.object(HTTPClient, "send_request_raw")
+    def test_send_request_error_raised(self, mocked_send_request_raw):
+        """Test to send an unsuccessful request which is not muted
+        """
+        # set the token
+        self.set_token()
+
+        # raise an error
+        mocked_send_request_raw.side_effect = ResponseInvalidError("invalid")
+
+        # call the method
+        with self.assertRaises(ResponseInvalidError):
+            self.client.send_request("endpoint", data={"key": "value"})
+
+    @patch.object(HTTPClient, "send_request_raw")
+    def test_send_request_error_muted(self, mocked_send_request_raw):
+        """Test to send an unsuccessful request which is muted
+        """
+        # set the token
+        self.set_token()
+        self.set_mute()
+
+        # raise an error
+        mocked_send_request_raw.side_effect = ResponseInvalidError("invalid")
+
+        # call the method
+        response = self.client.send_request("endpoint", data={"key": "value"})
+
+        # assert the response is None
+        self.assertIsNone(response)
+
+    @patch("dakara_base.http_client.requests.delete")
+    @patch("dakara_base.http_client.requests.patch")
+    @patch("dakara_base.http_client.requests.put")
+    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.get")
+    def test_methods(self, mock_get, mock_post, mock_put, mock_patch, mock_delete):
+        """Test the different HTTP methods
+        """
+        # set the token
+        self.set_token()
+
+        # mock the response
+        response = MagicMock()
+        response.json.return_value = "data"
+        mock_get.return_value = response
+        mock_post.return_value = response
+        mock_put.return_value = response
+        mock_patch.return_value = response
+        mock_delete.return_value = response
+
+        for method in ("get", "post", "put", "patch", "delete"):
+            # call the method
+
+            response_obtained = getattr(self.client, method)("endpoint")
+
+            # assert the result
+            self.assertEqual(response_obtained, "data")
+
+        # assert the calls
+        mock_get.assert_called_with(self.url_endpoint, headers=ANY)
+        mock_post.assert_called_with(self.url_endpoint, headers=ANY)
+        mock_put.assert_called_with(self.url_endpoint, headers=ANY)
+        mock_patch.assert_called_with(self.url_endpoint, headers=ANY)
+        mock_delete.assert_called_with(self.url_endpoint, headers=ANY)
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_authenticate_successful(self, mock_post):
+        """Test a successful authentication with the server
+        """
+        # mock the response of the server
+        mock_post.return_value.ok = True
+        mock_post.return_value.json.return_value = {"token": self.token}
+
+        # pre assertions
+        self.assertIsNone(self.client.token)
+
+        # call the method
+        with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
+            self.client.authenticate()
+
+        # call assertions
+        mock_post.assert_called_with(
+            self.url_login,
+            data={"username": self.login, "password": self.password},
+        )
+
+        # post assertions
+        self.assertIsNotNone(self.client.token)
+        self.assertEqual(self.client.token, self.token)
+
+        # assert effect on logger
+        self.assertListEqual(
+            logger.output,
+            [
+                "DEBUG:dakara_base.http_client:Authenticate to the server",
+                "DEBUG:dakara_base.http_client:Sending POST request to http://www.example.com/api/token-auth",
+                "INFO:dakara_base.http_client:Login to server successful",
+                "DEBUG:dakara_base.http_client:Token: {}".format(self.token),
+            ],
+        )
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_authenticate_error_network(self, mock_post):
+        """Test a network error when authenticating
+        """
+        # mock the response of the server
+        mock_post.side_effect = RequestException()
+
+        # call the method
+        with self.assertRaises(ResponseRequestError):
+            with self.assertLogs("dakara_base.http_client", "DEBUG"):
+                self.client.authenticate()
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_authenticate_error_authentication(self, mock_post):
+        """Test an authentication error when authenticating
+        """
+        # mock the response of the server
+        mock_post.return_value.ok = False
+        mock_post.return_value.status_code = 400
+
+        # call the method
+        with self.assertRaises(AuthenticationError):
+            with self.assertLogs("dakara_base.http_client", "DEBUG"):
+                self.client.authenticate()
+
+    @patch("dakara_base.http_client.requests.post")
+    def test_authenticate_error_other(self, mock_post):
+        """Test a server error when authenticating
+        """
+        # mock the response of the server
+        mock_post.return_value.ok = False
+        mock_post.return_value.status_code = 999
+        mock_post.return_value.test = "error"
+
+        # call the method
+        with self.assertRaises(AuthenticationError):
+            with self.assertLogs("dakara_base.http_client", "DEBUG"):
+                self.client.authenticate()
+
+    def test_get_token_header(self):
+        """Test the helper to get token header
+        """
+        # set the token
+        self.set_token()
+
+        # call the method
+        result = self.client.get_token_header()
+
+        # call assertions
+        self.assertEqual(result, {"Authorization": "Token " + self.token})
