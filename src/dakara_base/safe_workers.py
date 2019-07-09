@@ -27,10 +27,10 @@ event, as it can be used to stop the program.
 """
 
 
-import sys
-from threading import Event, Timer, Thread
-from queue import Queue, Empty
+from queue import Empty, Queue
+from threading import Event, Thread, Timer
 import logging
+import sys
 
 from dakara_base.exceptions import DakaraError
 

@@ -1,10 +1,10 @@
 import logging
 
-import requests
 from furl import furl
+import requests
 
-from dakara_base.utils import display_message
 from dakara_base.exceptions import DakaraError
+from dakara_base.utils import display_message
 
 
 logger = logging.getLogger(__name__)

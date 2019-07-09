@@ -1,10 +1,10 @@
-from unittest import TestCase, skipIf
-from threading import Event, Timer, Thread
-from queue import Queue
 from contextlib import contextmanager
+from queue import Queue
+from threading import Event, Timer, Thread
 from time import sleep
-import signal
+from unittest import TestCase, skipIf
 import os
+import signal
 import sys
 
 from dakara_base.safe_workers import (

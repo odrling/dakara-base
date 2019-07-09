@@ -8,9 +8,9 @@ from websocket import (
     WebSocketConnectionClosedException,
 )
 
-from dakara_base.safe_workers import WorkerSafeTimer, safe
-from dakara_base.utils import display_message
 from dakara_base.exceptions import DakaraError
+from dakara_base.safe_workers import safe, WorkerSafeTimer
+from dakara_base.utils import display_message
 
 
 logger = logging.getLogger(__name__)

@@ -4,10 +4,10 @@ from unittest.mock import patch
 from path import Path
 
 from dakara_base.resources_manager import (
-    resource_listdir,
-    get_file,
     generate_get_resource,
+    get_file,
     ResourceNotFoundError,
+    resource_listdir,
 )
 
 

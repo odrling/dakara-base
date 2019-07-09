@@ -1,17 +1,17 @@
 from unittest import TestCase
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import ANY, MagicMock, patch
 
 from requests.exceptions import RequestException
 
 from dakara_base.http_client import (
-    HTTPClient,
-    ParameterError,
-    MethodError,
-    ResponseRequestError,
-    ResponseInvalidError,
-    AuthenticationError,
-    NotAuthenticatedError,
     authenticated,
+    AuthenticationError,
+    HTTPClient,
+    MethodError,
+    NotAuthenticatedError,
+    ParameterError,
+    ResponseInvalidError,
+    ResponseRequestError,
 )
 
 

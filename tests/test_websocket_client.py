@@ -1,17 +1,17 @@
-from unittest import TestCase
-from unittest.mock import patch, MagicMock, ANY
-from threading import Event
 from queue import Queue
+from threading import Event
+from unittest import TestCase
+from unittest.mock import ANY, MagicMock, patch
 
 from websocket import WebSocketBadStatusException, WebSocketConnectionClosedException
 
 from dakara_base.websocket_client import (
-    connected,
-    NotConnectedError,
-    WebSocketClient,
-    ParameterError,
     AuthenticationError,
+    connected,
     NetworkError,
+    NotConnectedError,
+    ParameterError,
+    WebSocketClient,
 )
 
 

@@ -1,7 +1,7 @@
 from pkg_resources import (
+    resource_exists,
     resource_filename,
     resource_listdir as resource_listdir_orig,
-    resource_exists,
 )
 
 from path import Path

@@ -1,17 +1,17 @@
 from unittest import TestCase
-from unittest.mock import patch, ANY
+from unittest.mock import ANY, patch
 
-from yaml.parser import ParserError
 from path import Path
+from yaml.parser import ParserError
 
 from dakara_base.config import (
-    ConfigNotFoundError,
-    ConfigParseError,
-    ConfigInvalidError,
-    create_logger,
     load_config,
     LOG_FORMAT,
     LOG_LEVEL,
+    ConfigInvalidError,
+    ConfigNotFoundError,
+    ConfigParseError,
+    create_logger,
     set_loglevel,
 )
 from dakara_base.resources_manager import get_file
