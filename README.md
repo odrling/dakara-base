@@ -21,8 +21,15 @@ python setup.py install
 
 ## Run tests
 
-Run tests with:
+Run tests simply with:
 
-```
+```sh
 python setup.py test
+```
+
+To check coverage, use the `coverage` command:
+
+```sh
+coverage run --source=src setup.py test
+coverage report -m
 ```
