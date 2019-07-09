@@ -182,7 +182,7 @@ class WebSocketClient(WorkerSafeTimer):
 
         # the requested endpoint does not exist
         if isinstance(error, ConnectionResetError):
-            raise ValueError("Invalid endpoint to the server") from error
+            raise ParameterError("Invalid endpoint to the server") from error
 
         # connection closed by the server (see beginning of the method)
         if isinstance(error, WebSocketConnectionClosedException):

@@ -186,7 +186,7 @@ class WebSocketClientTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_base.websocket_client", "DEBUG") as logger:
-            self.client.on_close(None, None)
+            self.client.on_close(999, "reason")
 
         # assert the websocket object has been destroyed
         self.assertIsNone(self.client.websocket)
@@ -195,7 +195,10 @@ class WebSocketClientTestCase(TestCase):
         # assert the effect on logger
         self.assertListEqual(
             logger.output,
-            ["INFO:dakara_base.websocket_client:Websocket disconnected from server"],
+            [
+                "DEBUG:dakara_base.websocket_client:Code 999: reason",
+                "INFO:dakara_base.websocket_client:Websocket disconnected from server",
+            ],
         )
 
         # assert the call
@@ -386,7 +389,7 @@ class WebSocketClientTestCase(TestCase):
         # assert the call
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, ValueError)
+        self.assertIsInstance(error, ParameterError)
 
     def test_on_error_closed(self):
         """Test the callback on error when the connection is closed by server

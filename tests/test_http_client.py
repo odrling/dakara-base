@@ -410,3 +410,27 @@ class HTTPClientTestCase(TestCase):
 
         # call assertions
         self.assertEqual(result, {"Authorization": "Token " + self.token})
+
+    def test_get_json_from_response(self):
+        """Test the helper to get data from existing response
+        """
+        # create the mock
+        response = MagicMock()
+
+        # call the method
+        result = HTTPClient.get_json_from_response(response)
+
+        # assert the result is not None
+        self.assertIsNotNone(result)
+
+        # assert the call
+        response.json.assert_called_with()
+
+    def test_get_json_from_response_none(self):
+        """Test the helper to get data from no response
+        """
+        # call the method
+        result = HTTPClient.get_json_from_response(None)
+
+        # assert the result is not None
+        self.assertIsNone(result)

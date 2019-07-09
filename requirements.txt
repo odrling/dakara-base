@@ -1,8 +1,9 @@
 PyYAML==5.1.1
+black==19.3b0
 coloredlogs==10.0
+coverage==4.5.3
+flake8==3.7.7
 furl==2.0.0
 path.py==12.0.1
 requests==2.22.0
 websocket-client==0.56.0
-black==19.3b0
-flake8==3.7.7

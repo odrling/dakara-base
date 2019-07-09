@@ -172,7 +172,7 @@ class SafeTestCase(BaseTestCase):
         other = Other()
 
         # call the method
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             other.function_safe()
 
         # post assertions

@@ -32,6 +32,8 @@ from threading import Event, Timer, Thread
 from queue import Queue, Empty
 import logging
 
+from dakara_base.exceptions import DakaraError
+
 
 logger = logging.getLogger("safe_workers")
 
@@ -48,13 +50,12 @@ def safe(fun):
 
     def call(self, *args, **kwargs):
         # check the target's class is a safe thread or a safe worker
-        if not isinstance(self, (BaseSafeThread, BaseWorker)):
-            raise ValueError(
-                (
-                    "The class '{}' of method '{}' is not a "
-                    "BaseSafeThread or a BaseWorker"
-                ).format(self.__class__.__name__, fun.__name__)
+        assert isinstance(self, (BaseSafeThread, BaseWorker)), (
+            "The class '{}' of method '{}' is not a "
+            "BaseSafeThread or a BaseWorker".format(
+                self.__class__.__name__, fun.__name__
             )
+        )
 
         # try to run the target
         try:
@@ -555,25 +556,31 @@ class Runner:
                 raise error
 
             # if there is no error in the error queue, raise a general error
+            # this case is very unlikely to happen and is not tested
             except Empty as empty_error:
-                raise RuntimeError("Unknown error happened") from empty_error
+                raise NoErrorCaughtError("Unknown error happened") from empty_error
 
 
-class UnredefinedTimerError(Exception):
+class UnredefinedTimerError(DakaraError):
     """Unredefined timer error
 
     Error raised if the default timer of the `WorkerSafeTimer` class has not
     been redefined.
     """
 
-    pass
 
-
-class UnredefinedThreadError(Exception):
+class UnredefinedThreadError(DakaraError):
     """Unredefined thread error
 
     Error raised if the default thread of the `WorkerSafeTimer` class has not
     been redefined.
     """
 
-    pass
+
+class NoErrorCaughtError(RuntimeError):
+    """No error caught error
+
+    Error raised if the safe workers mechanism stops for an error, but there is
+    no error. This error is completely unexpected and hence does not inherit
+    from DakaraError.
+    """
