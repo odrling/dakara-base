@@ -76,11 +76,33 @@ class WebSocketClient(WorkerSafeTimer):
                 "Missing parameter in server config: {}".format(error)
             ) from error
 
+        # create callbacks
+        self.callbacks = {}
+        self.set_default_callbacks()
+
+        # create timer
         self.timer = self.create_timer(0, self.run)
+
+    def set_default_callbacks(self):
+        """Stub for creating callbacks
+
+        The method is automatically called at initialization.
+        """
 
     def exit_worker(self, *args, **kwargs):
         logger.debug("Aborting websocket connection")
         self.abort()
+
+    def set_callback(self, name, callback):
+        """Assign an arbitrary callback
+
+        Callback is added to the `callbacks` dictionary.
+
+        Args:
+            name (str): name of the callback in the `callbacks` attribute.
+            callback (function): function to assign.
+        """
+        self.callbacks[name] = callback
 
     @safe
     def on_open(self):

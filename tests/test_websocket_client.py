@@ -98,6 +98,16 @@ class WebSocketClientTestCase(TestCase):
         """
         self.client.websocket = MagicMock()
 
+    @patch.object(WebSocketClient, "set_default_callbacks")
+    def test_init_worker(self, mocked_set_default_callbacks):
+        """Test which method is called at initialization
+        """
+        # create the object
+        WebSocketClient(self.stop, self.errors, {"url": self.url})
+
+        # assert the call
+        mocked_set_default_callbacks.assert_called_once_with()
+
     def test_init_worker_url(self):
         """Test the created object with provided URL
         """
@@ -154,6 +164,21 @@ class WebSocketClientTestCase(TestCase):
         self.assertEqual(
             str(error.exception), "Missing parameter in server config: 'address'"
         )
+
+    def test_set_callback(self):
+        """Test the assignation of a callback
+        """
+        # create a callback function
+        callback = MagicMock()
+
+        # pre assert the callback is not set yet
+        self.assertIsNot(self.client.callbacks.get("test"), callback)
+
+        # call the method
+        self.client.set_callback("test", callback)
+
+        # post assert the callback is now set
+        self.assertIs(self.client.callbacks.get("test"), callback)
 
     @patch.object(WebSocketClient, "abort")
     def test_exit_worker(self, mocked_abort):
