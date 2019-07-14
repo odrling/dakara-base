@@ -109,7 +109,7 @@ class WebSocketClient(WorkerSafeTimer):
             reason (str): reason of the closed connection (often None).
         """
         if code or reason:
-            logger.debug("Code {}: {}".format(code, reason))
+            logger.debug("Code %i: %s", code, reason)
 
         # destroy websocket object
         self.websocket = None
@@ -125,7 +125,7 @@ class WebSocketClient(WorkerSafeTimer):
         self.on_connection_lost()
 
         # attempt to reconnect
-        logger.warning("Trying to reconnect in {} s".format(self.reconnect_interval))
+        logger.warning("Trying to reconnect in %i s", self.reconnect_interval)
         self.timer = self.create_timer(self.reconnect_interval, self.run)
         self.timer.start()
 
@@ -146,16 +146,14 @@ class WebSocketClient(WorkerSafeTimer):
         # if the message is not in JSON format, assume this is an error
         except json.JSONDecodeError:
             logger.error(
-                "Unexpected message from the server: '{}'".format(
-                    display_message(message)
-                )
+                "Unexpected message from the server: '%s'", display_message(message)
             )
             return
 
         # attempt to call the corresponding method
         method_name = "receive_{}".format(event["type"])
         if not hasattr(self, method_name):
-            logger.error("Event of unknown type received '{}'".format(event["type"]))
+            logger.error("Event of unknown type received '%s'", event["type"])
             return
 
         getattr(self, method_name)(event.get("data"))
@@ -197,7 +195,7 @@ class WebSocketClient(WorkerSafeTimer):
             return
 
         # other unlisted reason
-        logger.error("Websocket: {}".format(error))
+        logger.error("Websocket: %s", str(error))
 
     def on_connected(self):
         """Custom callback when the connection is established with the server

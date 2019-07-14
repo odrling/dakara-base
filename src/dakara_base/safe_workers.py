@@ -35,7 +35,7 @@ import sys
 from dakara_base.exceptions import DakaraError
 
 
-logger = logging.getLogger("safe_workers")
+logger = logging.getLogger(__name__)
 
 
 def safe(fun):
@@ -287,12 +287,12 @@ class Worker(BaseWorker):
         """
         super().__exit__()
 
-        logger.debug("Exiting worker method ({})".format(self.__class__.__name__))
+        logger.debug("Exiting worker method (%s)", self.__class__.__name__)
 
         # call custom exit
         self.exit_worker(*args, **kwargs)
 
-        logger.debug("Exited worker method ({})".format(self.__class__.__name__))
+        logger.debug("Exited worker method (%s)", self.__class__.__name__)
 
 
 class WorkerSafeTimer(BaseWorker):
@@ -361,9 +361,9 @@ class WorkerSafeTimer(BaseWorker):
             return
 
         logger.debug(
-            "Closing worker safe timer thread '{}' ({})".format(
-                self.timer.getName(), self.__class__.__name__
-            )
+            "Closing worker safe timer thread '%s' (%s)",
+            self.timer.getName(),
+            self.__class__.__name__,
         )
 
         # custom exit
@@ -376,9 +376,9 @@ class WorkerSafeTimer(BaseWorker):
         self.timer.join()
 
         logger.debug(
-            "Closed worker safe timer thread '{}' ({})".format(
-                self.timer.getName(), self.__class__.__name__
-            )
+            "Closed worker safe timer thread '%s' (%s)",
+            self.timer.getName(),
+            self.__class__.__name__,
         )
 
 
@@ -446,9 +446,9 @@ class WorkerSafeThread(BaseWorker):
             return
 
         logger.debug(
-            "Closing worker safe thread '{}' ({})".format(
-                self.thread.getName(), self.__class__.__name__
-            )
+            "Closing worker safe thread '%s' (%s)",
+            self.thread.getName(),
+            self.__class__.__name__,
         )
 
         # custom exit action
@@ -458,9 +458,9 @@ class WorkerSafeThread(BaseWorker):
         self.thread.join()
 
         logger.debug(
-            "Closed worker safe thread '{}' ({})".format(
-                self.thread.getName(), self.__class__.__name__
-            )
+            "Closed worker safe thread '%s' (%s)",
+            self.thread.getName(),
+            self.__class__.__name__,
         )
 
 

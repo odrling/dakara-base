@@ -29,7 +29,7 @@ def load_config(config_path, debug, mandatory_keys=None):
         ConfigError: if the config file cannot be open, cannot be parsed or
         misses critical sections.
     """
-    logger.info("Loading config file '{}'".format(config_path))
+    logger.info("Loading config file '%s'", config_path)
 
     # load and parse the file
     try:
