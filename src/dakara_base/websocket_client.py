@@ -60,6 +60,7 @@ class WebSocketClient(WorkerSafeTimer):
                 self.server_url = furl(
                     scheme="wss" if config.get("ssl") else "ws",
                     host=config["address"],
+                    port=config.get("port"),
                     path=route,
                 ).url
 

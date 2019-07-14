@@ -53,6 +53,7 @@ class HTTPClient:
                 self.server_url = furl(
                     scheme="https" if config.get("ssl") else "http",
                     host=config["address"],
+                    port=config.get("port"),
                     path=route,
                 ).url
 

@@ -63,11 +63,17 @@ class WebSocketClientTestCase(TestCase):
         # create a server address
         self.address = "www.example.com"
 
+        # create a server port
+        self.port = "8000"
+
         # create an URL
         self.url = "ws://www.example.com/ws"
 
         # create a secured URL
         self.url_secured = "wss://www.example.com/ws"
+
+        # create an URL with port
+        self.url_port = "ws://www.example.com:8000/ws"
 
         # create token header
         self.header = {"token": "token"}
@@ -102,7 +108,7 @@ class WebSocketClientTestCase(TestCase):
         self.assertIsNone(self.client.websocket)
 
     def test_init_worker_address(self):
-        """Test to create ojbcet with provided address
+        """Test to create object with provided address
         """
         # create a client
         client = WebSocketClient(
@@ -112,6 +118,9 @@ class WebSocketClientTestCase(TestCase):
         # assert the client
         self.assertEqual(client.server_url, self.url)
 
+    def test_init_worker_ssl(self):
+        """Test to create object with provided SSL security
+        """
         # create a secured client
         client_secured = WebSocketClient(
             self.stop, self.errors, {"address": self.address, "ssl": True}, route="ws"
@@ -119,6 +128,20 @@ class WebSocketClientTestCase(TestCase):
 
         # assert the client
         self.assertEqual(client_secured.server_url, self.url_secured)
+
+    def test_init_worker_port(self):
+        """Test to create object with provided port
+        """
+        # create a client
+        client = WebSocketClient(
+            self.stop,
+            self.errors,
+            {"address": self.address, "port": self.port},
+            route="ws",
+        )
+
+        # assert the client
+        self.assertEqual(client.server_url, self.url_port)
 
     def test_init_worker_missing_key(self):
         """Test to create object with missing mandatory key
