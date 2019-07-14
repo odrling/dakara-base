@@ -234,7 +234,7 @@ class HTTPClient:
         logger.debug("Authenticate to the server")
         response = self.send_request_raw(
             "post",
-            "token-auth",
+            "token-auth/",
             message_on_error="Unable to authenticate to the server",
             function_on_error=on_error,
             data=data,

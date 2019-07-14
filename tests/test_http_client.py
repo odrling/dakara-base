@@ -57,13 +57,16 @@ class HTTPClientTestCase(TestCase):
         self.token = "token value"
 
         # create a server URL
-        self.url = "http://www.example.com/api"
+        self.url = "http://www.example.com"
+
+        # create a server API URL
+        self.url_api = "http://www.example.com/api/"
 
         # create a server URL endpoint
-        self.url_endpoint = "http://www.example.com/api/endpoint"
+        self.url_endpoint = "http://www.example.com/api/endpoint/"
 
         # create login URL
-        self.url_login = "http://www.example.com/api/token-auth"
+        self.url_login = "http://www.example.com/api/token-auth/"
 
         # create a login and password
         self.login = "test"
@@ -71,7 +74,8 @@ class HTTPClientTestCase(TestCase):
 
         # create a ServerHTTPConnection instance
         self.client = HTTPClient(
-            {"url": self.url, "login": self.login, "password": self.password}
+            {"url": self.url, "login": self.login, "password": self.password},
+            route="api/",
         )
 
     def set_token(self):
@@ -88,7 +92,7 @@ class HTTPClientTestCase(TestCase):
         """Test to create object
         """
         # use the already created client object
-        self.assertEqual(self.client.server_url, self.url)
+        self.assertEqual(self.client.server_url, self.url_api)
         self.assertEqual(self.client.login, self.login)
         self.assertEqual(self.client.password, self.password)
         self.assertIsNone(self.client.token)
@@ -98,7 +102,7 @@ class HTTPClientTestCase(TestCase):
         """
         # try to create a client from invalid config
         with self.assertRaises(ParameterError) as error:
-            HTTPClient({"url": self.url}, route="api")
+            HTTPClient({"url": self.url}, route="api/")
 
         # assert the error
         self.assertEqual(
@@ -113,7 +117,7 @@ class HTTPClientTestCase(TestCase):
         with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
             self.client.send_request_raw(
                 "post",
-                "endpoint",
+                "endpoint/",
                 data={"content": "test"},
                 message_on_error="error message",
             )
@@ -123,13 +127,13 @@ class HTTPClientTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_base.http_client:"
-                "Sending POST request to http://www.example.com/api/endpoint"
+                "Sending POST request to http://www.example.com/api/endpoint/"
             ],
         )
 
         # assert the call
         mocked_post.assert_called_with(
-            "http://www.example.com/api/endpoint", data={"content": "test"}
+            "http://www.example.com/api/endpoint/", data={"content": "test"}
         )
 
     def test_send_request_raw_error_method(self):
@@ -139,7 +143,7 @@ class HTTPClientTestCase(TestCase):
         with self.assertRaises(MethodError):
             self.client.send_request_raw(
                 "invalid",
-                "endpoint",
+                "endpoint/",
                 data={"content": "test"},
                 message_on_error="error message",
             )
@@ -156,7 +160,7 @@ class HTTPClientTestCase(TestCase):
             with self.assertRaises(ResponseRequestError) as error:
                 self.client.send_request_raw(
                     "post",
-                    "endpoint",
+                    "endpoint/",
                     data={"content": "test"},
                     message_on_error="error message",
                 )
@@ -171,7 +175,7 @@ class HTTPClientTestCase(TestCase):
             logger.output,
             [
                 "DEBUG:dakara_base.http_client:Sending POST request to "
-                "http://www.example.com/api/endpoint",
+                "http://www.example.com/api/endpoint/",
                 "ERROR:dakara_base.http_client:error message, communication error",
             ],
         )
@@ -186,7 +190,7 @@ class HTTPClientTestCase(TestCase):
         # call the method
         with self.assertLogs("dakara_base.http_client", "DEBUG"):
             with self.assertRaises(ResponseInvalidError):
-                self.client.send_request_raw("post", "endpoint")
+                self.client.send_request_raw("post", "endpoint/")
 
     @patch("dakara_base.http_client.requests.post")
     def test_send_request_raw_error_response_custom(self, mocked_post):
@@ -206,7 +210,7 @@ class HTTPClientTestCase(TestCase):
         with self.assertLogs("dakara_base.http_client", "DEBUG"):
             with self.assertRaises(MyError):
                 self.client.send_request_raw(
-                    "post", "endpoint", function_on_error=on_error
+                    "post", "endpoint/", function_on_error=on_error
                 )
 
     @patch.object(HTTPClient, "send_request_raw")
@@ -217,11 +221,11 @@ class HTTPClientTestCase(TestCase):
         self.set_token()
 
         # call the method
-        self.client.send_request("endpoint", data={"key": "value"})
+        self.client.send_request("endpoint/", data={"key": "value"})
 
         # assert the call
         mocked_send_request_raw.assert_called_with(
-            "endpoint",
+            "endpoint/",
             headers={"Authorization": "Token token value"},
             data={"key": "value"},
         )
@@ -238,7 +242,7 @@ class HTTPClientTestCase(TestCase):
 
         # call the method
         with self.assertRaises(ResponseInvalidError):
-            self.client.send_request("endpoint", data={"key": "value"})
+            self.client.send_request("endpoint/", data={"key": "value"})
 
     @patch.object(HTTPClient, "send_request_raw")
     def test_send_request_error_muted(self, mocked_send_request_raw):
@@ -252,7 +256,7 @@ class HTTPClientTestCase(TestCase):
         mocked_send_request_raw.side_effect = ResponseInvalidError("invalid")
 
         # call the method
-        response = self.client.send_request("endpoint", data={"key": "value"})
+        response = self.client.send_request("endpoint/", data={"key": "value"})
 
         # assert the response is None
         self.assertIsNone(response)
@@ -282,7 +286,7 @@ class HTTPClientTestCase(TestCase):
         for method in ("get", "post", "put", "patch", "delete"):
             # call the method
 
-            response_obtained = getattr(self.client, method)("endpoint")
+            response_obtained = getattr(self.client, method)("endpoint/")
 
             # assert the result
             self.assertEqual(response_obtained, "data")
@@ -324,7 +328,7 @@ class HTTPClientTestCase(TestCase):
             [
                 "DEBUG:dakara_base.http_client:Authenticate to the server",
                 "DEBUG:dakara_base.http_client:"
-                "Sending POST request to http://www.example.com/api/token-auth",
+                "Sending POST request to http://www.example.com/api/token-auth/",
                 "INFO:dakara_base.http_client:Login to server successful",
                 "DEBUG:dakara_base.http_client:Token: {}".format(self.token),
             ],

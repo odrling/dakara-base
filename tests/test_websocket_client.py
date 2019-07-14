@@ -60,8 +60,11 @@ class WebSocketClientTestCase(TestCase):
         # create a mock websocket
         self.websocket = MagicMock()
 
-        # create an URL
-        self.url = "ws://www.example.com/ws"
+        # create a server URL
+        self.url = "ws://www.example.com"
+
+        # create a server WS endpoint URL
+        self.url_ws = "ws://www.example.com/ws/"
 
         # create token header
         self.header = {"token": "token"}
@@ -79,6 +82,7 @@ class WebSocketClientTestCase(TestCase):
             self.errors,
             {"url": self.url, "reconnect_interval": self.reconnect_interval},
             header=self.header,
+            route="ws/",
         )
 
     def set_websocket(self):
@@ -97,7 +101,7 @@ class WebSocketClientTestCase(TestCase):
         mocked_set_default_callbacks.assert_called_once_with()
 
         # use the already created client object
-        self.assertEqual(self.client.server_url, self.url)
+        self.assertEqual(self.client.server_url, self.url_ws)
         self.assertEqual(self.client.header, self.header)
         self.assertEqual(self.client.reconnect_interval, self.reconnect_interval)
         self.assertIsNone(self.client.websocket)
@@ -472,7 +476,7 @@ class WebSocketClientTestCase(TestCase):
 
         # assert the call
         mocked_websocket_app_class.assert_called_with(
-            self.url,
+            self.url_ws,
             header=self.header,
             on_open=ANY,
             on_close=ANY,
