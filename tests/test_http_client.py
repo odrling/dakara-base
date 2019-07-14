@@ -56,20 +56,8 @@ class HTTPClientTestCase(TestCase):
         # create a token
         self.token = "token value"
 
-        # create a server address
-        self.address = "www.example.com"
-
-        # create a server port
-        self.port = "8000"
-
         # create a server URL
         self.url = "http://www.example.com/api"
-
-        # create a secured URL
-        self.url_secured = "https://www.example.com/api"
-
-        # create an URL with port
-        self.url_port = "http://www.example.com:8000/api"
 
         # create a server URL endpoint
         self.url_endpoint = "http://www.example.com/api/endpoint"
@@ -96,60 +84,14 @@ class HTTPClientTestCase(TestCase):
         """
         self.client.mute_raise = True
 
-    def test_init_url(self):
-        """Test to create object with provided URL
+    def test_init(self):
+        """Test to create object
         """
         # use the already created client object
         self.assertEqual(self.client.server_url, self.url)
         self.assertEqual(self.client.login, self.login)
         self.assertEqual(self.client.password, self.password)
         self.assertIsNone(self.client.token)
-
-    def test_init_address(self):
-        """Test to create object with provided address
-        """
-        # create a client
-        client = HTTPClient(
-            {"address": self.address, "login": self.login, "password": self.password},
-            route="api",
-        )
-
-        # assert the client
-        self.assertEqual(client.server_url, self.url)
-
-    def test_init_address_secured(self):
-        """Test to create object with provided SSL security
-        """
-        # create a secured client
-        client_secured = HTTPClient(
-            {
-                "address": self.address,
-                "login": self.login,
-                "password": self.password,
-                "ssl": True,
-            },
-            route="api",
-        )
-
-        # assert the secured client
-        self.assertEqual(client_secured.server_url, self.url_secured)
-
-    def test_init_address_port(self):
-        """Test to create object with provided port
-        """
-        # create a client
-        client = HTTPClient(
-            {
-                "address": self.address,
-                "login": self.login,
-                "password": self.password,
-                "port": self.port,
-            },
-            route="api",
-        )
-
-        # assert the client
-        self.assertEqual(client.server_url, self.url_port)
 
     def test_init_missing_key(self):
         """Test to create object with missing mandatory key

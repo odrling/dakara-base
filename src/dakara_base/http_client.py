@@ -4,7 +4,7 @@ from furl import furl
 import requests
 
 from dakara_base.exceptions import DakaraError
-from dakara_base.utils import display_message
+from dakara_base.utils import display_message, create_url
 
 
 logger = logging.getLogger(__name__)
@@ -44,18 +44,10 @@ class HTTPClient:
         self.mute_raise = mute_raise
 
         try:
-            # setting URL directly
-            if "url" in config:
-                self.server_url = config["url"]
-
-            # setting URL by address and protocol
-            else:
-                self.server_url = furl(
-                    scheme="https" if config.get("ssl") else "http",
-                    host=config["address"],
-                    port=config.get("port"),
-                    path=route,
-                ).url
+            # url
+            self.server_url = create_url(
+                **config, path=route, scheme_no_ssl="http", scheme_ssl="https"
+            )
 
             # authentication
             self.token = None

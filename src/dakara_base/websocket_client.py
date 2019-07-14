@@ -1,7 +1,6 @@
 import json
 import logging
 
-from furl import furl
 from websocket import (
     WebSocketApp,
     WebSocketBadStatusException,
@@ -10,7 +9,7 @@ from websocket import (
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe, WorkerSafeTimer
-from dakara_base.utils import display_message
+from dakara_base.utils import display_message, create_url
 
 
 logger = logging.getLogger(__name__)
@@ -50,31 +49,16 @@ class WebSocketClient(WorkerSafeTimer):
     """
 
     def init_worker(self, config, route="", header={}):
-        try:
-            # setting URL directly
-            if "url" in config:
-                self.server_url = config["url"]
+        # url
+        self.server_url = create_url(
+            **config, path=route, scheme_no_ssl="ws", scheme_ssl="wss"
+        )
 
-            # setting URL by address and protocol
-            else:
-                self.server_url = furl(
-                    scheme="wss" if config.get("ssl") else "ws",
-                    host=config["address"],
-                    port=config.get("port"),
-                    path=route,
-                ).url
-
-            self.header = header
-            self.websocket = None
-            self.retry = False
-            self.reconnect_interval = config.get(
-                "reconnect_interval", RECONNECT_INTERVAL
-            )
-
-        except KeyError as error:
-            raise ParameterError(
-                "Missing parameter in server config: {}".format(error)
-            ) from error
+        # other
+        self.header = header
+        self.websocket = None
+        self.retry = False
+        self.reconnect_interval = config.get("reconnect_interval", RECONNECT_INTERVAL)
 
         # create callbacks
         self.callbacks = {}

@@ -60,20 +60,8 @@ class WebSocketClientTestCase(TestCase):
         # create a mock websocket
         self.websocket = MagicMock()
 
-        # create a server address
-        self.address = "www.example.com"
-
-        # create a server port
-        self.port = "8000"
-
         # create an URL
         self.url = "ws://www.example.com/ws"
-
-        # create a secured URL
-        self.url_secured = "wss://www.example.com/ws"
-
-        # create an URL with port
-        self.url_port = "ws://www.example.com:8000/ws"
 
         # create token header
         self.header = {"token": "token"}
@@ -100,7 +88,7 @@ class WebSocketClientTestCase(TestCase):
 
     @patch.object(WebSocketClient, "set_default_callbacks")
     def test_init_worker(self, mocked_set_default_callbacks):
-        """Test which method is called at initialization
+        """Test the initialization
         """
         # create the object
         WebSocketClient(self.stop, self.errors, {"url": self.url})
@@ -108,62 +96,11 @@ class WebSocketClientTestCase(TestCase):
         # assert the call
         mocked_set_default_callbacks.assert_called_once_with()
 
-    def test_init_worker_url(self):
-        """Test the created object with provided URL
-        """
         # use the already created client object
         self.assertEqual(self.client.server_url, self.url)
         self.assertEqual(self.client.header, self.header)
         self.assertEqual(self.client.reconnect_interval, self.reconnect_interval)
         self.assertIsNone(self.client.websocket)
-
-    def test_init_worker_address(self):
-        """Test to create object with provided address
-        """
-        # create a client
-        client = WebSocketClient(
-            self.stop, self.errors, {"address": self.address}, route="ws"
-        )
-
-        # assert the client
-        self.assertEqual(client.server_url, self.url)
-
-    def test_init_worker_ssl(self):
-        """Test to create object with provided SSL security
-        """
-        # create a secured client
-        client_secured = WebSocketClient(
-            self.stop, self.errors, {"address": self.address, "ssl": True}, route="ws"
-        )
-
-        # assert the client
-        self.assertEqual(client_secured.server_url, self.url_secured)
-
-    def test_init_worker_port(self):
-        """Test to create object with provided port
-        """
-        # create a client
-        client = WebSocketClient(
-            self.stop,
-            self.errors,
-            {"address": self.address, "port": self.port},
-            route="ws",
-        )
-
-        # assert the client
-        self.assertEqual(client.server_url, self.url_port)
-
-    def test_init_worker_missing_key(self):
-        """Test to create object with missing mandatory key
-        """
-        # try to create a client from invalid config
-        with self.assertRaises(ParameterError) as error:
-            WebSocketClient(self.stop, self.errors, {}, route="api")
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception), "Missing parameter in server config: 'address'"
-        )
 
     def test_set_callback(self):
         """Test the assignation of a callback
