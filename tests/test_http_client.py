@@ -106,7 +106,7 @@ class HTTPClientTestCase(TestCase):
         )
 
     @patch("dakara_base.http_client.requests.post")
-    def test_send_request_raw_successful(self, mock_post):
+    def test_send_request_raw_successful(self, mocked_post):
         """Test to send a raw request with the generic method
         """
         # call the method
@@ -128,7 +128,7 @@ class HTTPClientTestCase(TestCase):
         )
 
         # assert the call
-        mock_post.assert_called_with(
+        mocked_post.assert_called_with(
             "http://www.example.com/api/endpoint", data={"content": "test"}
         )
 
@@ -145,11 +145,11 @@ class HTTPClientTestCase(TestCase):
             )
 
     @patch("dakara_base.http_client.requests.post")
-    def test_send_request_raw_error_request(self, mock_post):
+    def test_send_request_raw_error_request(self, mocked_post):
         """Test to send a raw request when there is a communication error
         """
         # mock the response of the server
-        mock_post.side_effect = RequestException("error")
+        mocked_post.side_effect = RequestException("error")
 
         # call the method
         with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
@@ -177,11 +177,11 @@ class HTTPClientTestCase(TestCase):
         )
 
     @patch("dakara_base.http_client.requests.post")
-    def test_send_request_raw_error_response(self, mock_post):
+    def test_send_request_raw_error_response(self, mocked_post):
         """Test to send a raw request when the response is invalid
         """
         # mock the response of the server
-        mock_post.return_value.ok = False
+        mocked_post.return_value.ok = False
 
         # call the method
         with self.assertLogs("dakara_base.http_client", "DEBUG"):
@@ -189,11 +189,11 @@ class HTTPClientTestCase(TestCase):
                 self.client.send_request_raw("post", "endpoint")
 
     @patch("dakara_base.http_client.requests.post")
-    def test_send_request_raw_error_response_custom(self, mock_post):
+    def test_send_request_raw_error_response_custom(self, mocked_post):
         """Test to send a raw request when the response is invalid and a error function given
         """
         # mock the response of the server
-        mock_post.return_value.ok = False
+        mocked_post.return_value.ok = False
 
         # create error exception and error function
         class MyError(Exception):
@@ -262,7 +262,9 @@ class HTTPClientTestCase(TestCase):
     @patch("dakara_base.http_client.requests.put")
     @patch("dakara_base.http_client.requests.post")
     @patch("dakara_base.http_client.requests.get")
-    def test_methods(self, mock_get, mock_post, mock_put, mock_patch, mock_delete):
+    def test_methods(
+        self, mocked_get, mocked_post, mocked_put, mocked_patch, mocked_delete
+    ):
         """Test the different HTTP methods
         """
         # set the token
@@ -271,11 +273,11 @@ class HTTPClientTestCase(TestCase):
         # mock the response
         response = MagicMock()
         response.json.return_value = "data"
-        mock_get.return_value = response
-        mock_post.return_value = response
-        mock_put.return_value = response
-        mock_patch.return_value = response
-        mock_delete.return_value = response
+        mocked_get.return_value = response
+        mocked_post.return_value = response
+        mocked_put.return_value = response
+        mocked_patch.return_value = response
+        mocked_delete.return_value = response
 
         for method in ("get", "post", "put", "patch", "delete"):
             # call the method
@@ -286,19 +288,19 @@ class HTTPClientTestCase(TestCase):
             self.assertEqual(response_obtained, "data")
 
         # assert the calls
-        mock_get.assert_called_with(self.url_endpoint, headers=ANY)
-        mock_post.assert_called_with(self.url_endpoint, headers=ANY)
-        mock_put.assert_called_with(self.url_endpoint, headers=ANY)
-        mock_patch.assert_called_with(self.url_endpoint, headers=ANY)
-        mock_delete.assert_called_with(self.url_endpoint, headers=ANY)
+        mocked_get.assert_called_with(self.url_endpoint, headers=ANY)
+        mocked_post.assert_called_with(self.url_endpoint, headers=ANY)
+        mocked_put.assert_called_with(self.url_endpoint, headers=ANY)
+        mocked_patch.assert_called_with(self.url_endpoint, headers=ANY)
+        mocked_delete.assert_called_with(self.url_endpoint, headers=ANY)
 
     @patch("dakara_base.http_client.requests.post")
-    def test_authenticate_successful(self, mock_post):
+    def test_authenticate_successful(self, mocked_post):
         """Test a successful authentication with the server
         """
         # mock the response of the server
-        mock_post.return_value.ok = True
-        mock_post.return_value.json.return_value = {"token": self.token}
+        mocked_post.return_value.ok = True
+        mocked_post.return_value.json.return_value = {"token": self.token}
 
         # pre assertions
         self.assertIsNone(self.client.token)
@@ -308,7 +310,7 @@ class HTTPClientTestCase(TestCase):
             self.client.authenticate()
 
         # call assertions
-        mock_post.assert_called_with(
+        mocked_post.assert_called_with(
             self.url_login, data={"username": self.login, "password": self.password}
         )
 
@@ -329,11 +331,11 @@ class HTTPClientTestCase(TestCase):
         )
 
     @patch("dakara_base.http_client.requests.post")
-    def test_authenticate_error_network(self, mock_post):
+    def test_authenticate_error_network(self, mocked_post):
         """Test a network error when authenticating
         """
         # mock the response of the server
-        mock_post.side_effect = RequestException()
+        mocked_post.side_effect = RequestException()
 
         # call the method
         with self.assertRaises(ResponseRequestError):
@@ -341,12 +343,12 @@ class HTTPClientTestCase(TestCase):
                 self.client.authenticate()
 
     @patch("dakara_base.http_client.requests.post")
-    def test_authenticate_error_authentication(self, mock_post):
+    def test_authenticate_error_authentication(self, mocked_post):
         """Test an authentication error when authenticating
         """
         # mock the response of the server
-        mock_post.return_value.ok = False
-        mock_post.return_value.status_code = 400
+        mocked_post.return_value.ok = False
+        mocked_post.return_value.status_code = 400
 
         # call the method
         with self.assertRaises(AuthenticationError):
@@ -354,13 +356,13 @@ class HTTPClientTestCase(TestCase):
                 self.client.authenticate()
 
     @patch("dakara_base.http_client.requests.post")
-    def test_authenticate_error_other(self, mock_post):
+    def test_authenticate_error_other(self, mocked_post):
         """Test a server error when authenticating
         """
         # mock the response of the server
-        mock_post.return_value.ok = False
-        mock_post.return_value.status_code = 999
-        mock_post.return_value.test = "error"
+        mocked_post.return_value.ok = False
+        mocked_post.return_value.status_code = 999
+        mocked_post.return_value.test = "error"
 
         # call the method
         with self.assertRaises(AuthenticationError):

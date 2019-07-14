@@ -449,7 +449,7 @@ class WebSocketClientTestCase(TestCase):
     @patch("dakara_base.websocket_client.WebSocketApp")
     def test_run(
         self,
-        mock_websocket_app_class,
+        mocked_websocket_app_class,
         mocked_on_open,
         mocked_on_close,
         mocked_on_message,
@@ -471,7 +471,7 @@ class WebSocketClientTestCase(TestCase):
         )
 
         # assert the call
-        mock_websocket_app_class.assert_called_with(
+        mocked_websocket_app_class.assert_called_with(
             self.url,
             header=self.header,
             on_open=ANY,
@@ -487,7 +487,7 @@ class WebSocketClientTestCase(TestCase):
         # method
         # so, we check that calling the given method calls the instance method
         websocket = MagicMock()
-        _, kwargs = mock_websocket_app_class.call_args
+        _, kwargs = mocked_websocket_app_class.call_args
 
         kwargs["on_open"](websocket)
         self.client.on_open.assert_called_with()

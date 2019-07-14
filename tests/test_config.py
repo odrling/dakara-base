@@ -67,11 +67,11 @@ class LoadConfigTestCase(TestCase):
         self.assertEqual(str(error.exception), "No config file found")
 
     @patch("dakara_base.config.yaml.load")
-    def test_load_config_fail_parser_error(self, mock_load):
+    def test_load_config_fail_parser_error(self, mocked_load):
         """Test to load an invalid config file
         """
         # mock the call to yaml
-        mock_load.side_effect = ParserError("parser error")
+        mocked_load.side_effect = ParserError("parser error")
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
@@ -82,7 +82,7 @@ class LoadConfigTestCase(TestCase):
         self.assertEqual(str(error.exception), "Unable to parse config file")
 
         # assert the call
-        mock_load.assert_called_with(ANY, Loader=ANY)
+        mocked_load.assert_called_with(ANY, Loader=ANY)
 
     def test_load_config_fail_missing_keys(self):
         """Test to load a config file without required keys
@@ -117,21 +117,21 @@ class SetLoglevelTestCase(TestCase):
     """
 
     @patch("dakara_base.config.coloredlogs.set_level")
-    def test_configure_logger(self, mock_set_level):
+    def test_configure_logger(self, mocked_set_level):
         """Test to configure the logger
         """
         # call the method
         set_loglevel({"loglevel": "DEBUG"})
 
         # assert the result
-        mock_set_level.assert_called_with("DEBUG")
+        mocked_set_level.assert_called_with("DEBUG")
 
     @patch("dakara_base.config.coloredlogs.set_level")
-    def test_configure_logger_no_level(self, mock_set_level):
+    def test_configure_logger_no_level(self, mocked_set_level):
         """Test to configure the logger with no log level
         """
         # call the method
         set_loglevel({})
 
         # assert the result
-        mock_set_level.assert_called_with("INFO")
+        mocked_set_level.assert_called_with("INFO")
