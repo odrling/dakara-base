@@ -11,6 +11,7 @@ branches:
 
 # command to install python dependencies
 install:
+  - pip install --upgrade "setuptools>=39.2"
   - pip install -e "."
   - pip install -e ".[test]"
 
