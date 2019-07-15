@@ -1,5 +1,5 @@
 PyYAML==5.1.1
-black==19.3b0
+black==19.3b0; python_version >= '3.6'
 coloredlogs==10.0
 coverage==4.5.3
 flake8==3.7.7
