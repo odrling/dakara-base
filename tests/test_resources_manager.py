@@ -87,7 +87,7 @@ class GetFileTestCase(TestCase):
 
         # assert the result
         path = MODULE_PATH / "resources" / "dummy"
-        self.assertEqual(result, path.normpath())
+        self.assertEqual(result, path)
 
 
 class GenerateGetResourceTestCase(TestCase):
@@ -102,7 +102,7 @@ class GenerateGetResourceTestCase(TestCase):
         self.resource_name = "some resource"
 
         # set up resource path
-        self.resource_path = "path/to/some/resource"
+        self.resource_path = Path("path") / "to" / "some" / "resource"
 
         # set up resource getter
         self.get_resource = generate_get_resource(
@@ -130,7 +130,7 @@ class GenerateGetResourceTestCase(TestCase):
         )
 
         # assert the result
-        self.assertEqual(result, Path(self.resource_path).normpath())
+        self.assertEqual(result, self.resource_path)
 
     @patch("dakara_base.resources_manager.resource_filename")
     def test_fail(self, mocked_resource_filename):

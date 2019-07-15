@@ -19,7 +19,25 @@ Install the package with:
 python setup.py install
 ```
 
-## Run tests
+## Developpment
+
+### Install dependencies
+
+Please ensure you have a recent enough version of `setuptools`:
+
+```sh
+pip install --upgrade "setuptools>=40.0"
+```
+
+Install the dependencies with:
+
+```sh
+pip install -e ".[tests]"
+```
+
+This installs the normal dependencies of the package plus the dependencies for tests.
+
+### Run tests
 
 Run tests simply with:
 
