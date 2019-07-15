@@ -71,7 +71,7 @@ def generate_get_resource(resource, resource_list, resource_name):
                 )
             )
 
-        return Path(resource_filename(resource, filename))
+        return Path(resource_filename(resource, filename)).normpath()
 
     return get_resource
 
