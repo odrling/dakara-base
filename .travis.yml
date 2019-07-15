@@ -11,7 +11,7 @@ branches:
 
 # command to install python dependencies
 install:
-  - pip install -r requirements.txt
+  - python setup.py develop
 
 # command to run tests
 script:
