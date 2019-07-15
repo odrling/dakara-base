@@ -26,13 +26,15 @@ environment:
 # check current python version
 init:
   - "echo %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "py -%PYTHON_VERSION% --version"
 
 # command to install system and python dependencies
 install:
-  - "%PYTHON%/Scripts/pip.exe install -r requirements.txt"
+  - "%PYTHON%/python.exe -m pip install --upgrade 'setuptools>=40.0'"
+  - "%PYTHON%/python.exe -m pip install -e '.[tests]'"
 
 # command to run tests
 test_script:
   - "%PYTHON%/python.exe setup.py test"
-  - "if NOT %PYTHON_VERSION% == 3.5 (%PYTHON%/Scripts/black.exe . --check)"
-  - "%PYTHON%/Scripts/flake8.exe"
+  - "if NOT %PYTHON_VERSION% == 3.5 (%PYTHON%/python.exe black . --check)"
+  - "%PYTHON%/python.exe -m flake8"
