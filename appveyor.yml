@@ -45,7 +45,7 @@ test_script:
   - "py -%PYTHON_VERSION% -m flake8"
 
 # commands to manage tests results
-after_script:
+after_test:
   # show coverage stats
   - "py -%PYTHON_VERSION% -m coverage report -m"
 
