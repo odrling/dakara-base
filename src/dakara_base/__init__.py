@@ -1,1 +1,1 @@
-from dakara_base.version import __version__  # noqa F401
+from dakara_base.version import __version__, __date__  # noqa F401
