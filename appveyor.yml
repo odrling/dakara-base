@@ -42,6 +42,7 @@ test_script:
 
   # show coverage stats
   - "py -%PYTHON_VERSION% -m coverage report -m"
+  - "py -%PYTHON_VERSION% -m coverage combine"
   - "py -%PYTHON_VERSION% -m codecov"
 
   # run code formatting tests
