@@ -21,7 +21,8 @@ RECONNECT_INTERVAL = 5
 def connected(fun):
     """Decorator that ensures the websocket is set
 
-    It makes sure that the given function is callel once connected.
+    It makes sure that the given function is called only if connected.
+    If not connected, calling the function will raise a NotConnectedError.
 
     Args:
         fun (function): function to decorate.
@@ -40,7 +41,26 @@ def connected(fun):
 
 
 class WebSocketClient(WorkerSafeTimer):
-    """Object representing the WebSocket connection with the Dakara server
+    """WebSocket client.
+
+    It communicates with WebSocket messages of a fixed format. The message is a
+    JSON string representing an object containing two keys:
+        * `type` (str): the type of the message, mandatory.
+        * `data` (anything): the content of the message, optional.
+
+    On receiving a message, the client will call the method corresponding its
+    type, which name is `receive_<type of the message here>`.
+
+    Attributes:
+        server_url (str): URL of the server.
+        header (dict): header to add to the HTTP requests for authentication.
+        websocket (websocket.WebSocketApp): WebSocket connection object.
+        retry (bool): flag to retry a connection if it was lost.
+        reconnect_interval (int): interval in seconds between to reconnection
+            attempts.
+        callbacks (dict): dictionary of callbacks actions to call on receiving
+            messages.
+        timer (threading.Timer): timer used for reconnection.
 
     Args:
         config (dict): configuration for the server, the same as
@@ -74,13 +94,15 @@ class WebSocketClient(WorkerSafeTimer):
         """
 
     def exit_worker(self, *args, **kwargs):
+        """Method called on exiting the worker to abort the connection
+        """
         logger.debug("Aborting websocket connection")
         self.abort()
 
     def set_callback(self, name, callback):
         """Assign an arbitrary callback
 
-        Callback is added to the `callbacks` dictionary.
+        Callback is added to the `callbacks` dictionary attribute.
 
         Args:
             name (str): name of the callback in the `callbacks` attribute.
@@ -134,7 +156,11 @@ class WebSocketClient(WorkerSafeTimer):
         """Callback when a message is received
 
         It will call the method which name corresponds to the event type, if
-        possible.
+        possible. Methods must have the name `receive_<name of the event type
+        here>`, the type must be indicated in the `type` key of the message.
+        The content of the message must be in the `data` key.
+
+        Any error is logged.
 
         Args:
             message (str): a JSON text of the event.
@@ -151,7 +177,7 @@ class WebSocketClient(WorkerSafeTimer):
             return
 
         # attempt to call the corresponding method
-        method_name = "receive_{}".format(event["type"])
+        method_name = "receive_{}".format(event.get("type"))
         if not hasattr(self, method_name):
             logger.error("Event of unknown type received '%s'", event["type"])
             return
@@ -164,6 +190,11 @@ class WebSocketClient(WorkerSafeTimer):
 
         Args:
             error (BaseException): class of the error.
+
+        Raises:
+            AuthenticationError: if the connection is denied.
+            NetworkError: if the communication cannot be established.
+            ParameterError: if the endpoint is invalid.
         """
         # do not analyze error on program exit, as it will mistake the
         # WebSocketConnectionClosedException raised by invoking `abort` for a
@@ -233,8 +264,7 @@ class WebSocketClient(WorkerSafeTimer):
         """Request to interrupt the connection
 
         Can be called from anywhere. It will raise an
-        `WebSocketConnectionClosedException` which will be passed to
-        `on_error`.
+        WebSocketConnectionClosedException which will be passed to `on_error`.
         """
         self.retry = False
 
@@ -249,7 +279,7 @@ class WebSocketClient(WorkerSafeTimer):
         Create the websocket connection and wait events from it. The method can
         be interrupted with the `abort` method.
 
-        The WebSocketApp class is a genki: it will never complaint of anything.
+        The WebSocketApp class is a genki: it will never complain of anything.
         Wether it is unable to create a connection or its connection is lost,
         the `run_forever` method ends without any exception or non-None return
         value. Exceptions are handled by the yandere `on_error` callback.

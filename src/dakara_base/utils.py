@@ -25,10 +25,11 @@ def create_url(
 ):
     """Create an URL from arguments
 
-    If `url` is given, the function returns it directly.  If neither `host` nor
-    `port` are given, they are extracted from `address` with the `host:port`
-    format.  If `ssl` is given and True, `scheme_ssl` is used, otherewise
-    `scheme_no_ssl` is used.  If `path` is given, it is appended to the URL.
+    If `url` is given, the function returns it with `path` appended. If no
+    `host` is given, `host` and `port` are extracted from `address` with the
+    `host:port` format.  If `ssl` is given and True, `scheme_ssl` is used,
+    otherewise `scheme_no_ssl` is used.  If `path` is given, it is appended to
+    the URL.
 
     Args:
         url (str): direct URL.
@@ -39,9 +40,14 @@ def create_url(
         ssl (bool): use a secured URL or not.
         scheme_no_ssl (str): scheme used if `ssl` is false.
         scheme_ssl (str): scheme used if `ssl` is true.
+        Any other argument is ignored.
 
     Returns:
         str: URL string.
+
+    Raises:
+        URLParameterError: if `scheme` or `host` cannot be defined, or if the
+            parameters are invalid to `furl.furl`.
     """
     # setting URL directly
     if url:

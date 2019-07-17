@@ -11,6 +11,12 @@ from dakara_base.exceptions import DakaraError
 
 def resource_listdir(*args, **kwargs):
     """List resources without special files
+
+    Args:
+        See `pkg_resources.resource_listdir`.
+
+    Returns:
+        list: List of filenames.
     """
     return [
         filename
@@ -24,7 +30,7 @@ def get_file(resource, filename):
 
     Args:
         resource (str): requirement.
-        filename (str): name or path to the file.
+        filename (str): filename or path to the file.
 
     Returns:
         path.Path: absolute path of the file.
@@ -45,7 +51,7 @@ def generate_get_resource(resource, resource_list, resource_name):
 
     Args:
         resource (str): requirement.
-        resource_list (list of str): list of files within the requirement.
+        resource_list (list): list of filenames within the requirement.
         resource_name (str): human readable name of the resource.
 
     Returns:

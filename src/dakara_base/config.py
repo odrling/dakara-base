@@ -26,8 +26,9 @@ def load_config(config_path, debug, mandatory_keys=None):
         dict: dictionary of the config.
 
     Raises:
-        ConfigError: if the config file cannot be open, cannot be parsed or
-        misses critical sections.
+        ConfigNotFoundError: if the config file cannot be open.
+        ConfigParseError: if the config cannot be parsed.
+        ConfigInvalidError: if the config misses critical sections.
     """
     logger.info("Loading config file '%s'", config_path)
 
@@ -68,8 +69,7 @@ def set_loglevel(config):
     """Set logger level
 
     Arguments:
-        config (dict): dictionary of the config containing at least the
-            `loglevel` key.
+        config (dict): dictionary of the config.
     """
     loglevel = config.get("loglevel", LOG_LEVEL)
     coloredlogs.set_level(loglevel)

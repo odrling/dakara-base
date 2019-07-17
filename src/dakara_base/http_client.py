@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 def authenticated(fun):
     """Decorator that ensures the token is set
 
-    It makes sure that the given function is callel once authenticated.
+    It makes sure that the given function is called only if authenticated. If
+    not authenticated, calling the function will raise a NotAuthenticatedError.
 
     Args:
         fun (function): function to decorate.
@@ -32,12 +33,28 @@ def authenticated(fun):
 
 
 class HTTPClient:
-    """HTTP client connected to an API
+    """HTTP client designed to work with an API
+
+    The client uses a token authentication policy only.
+
+    Attributes:
+        mute_raise (bool): if true, no exception will be raised when performing
+            connections with the server (but authentication), only logged.
+        server_url (str): URL of the server.
+        token (str): value of the token. The token is set when successfuly
+            calling `authenticate`.
+        login (str): login used for authentication.
+        password (str): password used for authentication.
 
     Args:
         config (dict): config of the server.
-        mute_raise (bool): if true, no connection exception will be
-            raised, but only logged.
+        route (str): prefix of the endpoint routes.
+        mute_raise (bool): if true, no exception will be raised when performing
+            connections with the server (but authentication), only logged.
+
+    Raises:
+        ParameterError: if critical parameters cannot be found in the
+            configuration.
     """
 
     def __init__(self, config, route="", mute_raise=False):
@@ -70,17 +87,20 @@ class HTTPClient:
     ):
         """Generic method to send requests to the server
 
-        It takes care of errors.
+        It takes care of errors and raises exceptions.
 
         Args:
             method (str): name of the HTTP method to use.
             endpoint (str): endpoint to sent the request to. Will be added to
-                the end of the URL.
+                the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
             function_on_error (function): fuction called if the request is not
                 successful, it will receive the response and must return an
-                exception that will be raised.
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             requests.models.Response: response object.
@@ -171,6 +191,9 @@ class HTTPClient:
     def get(self, *args, **kwargs):
         """Generic method to get data on server
 
+        Args:
+            See `send_request`.
+
         Returns:
             dict: response object from the server.
         """
@@ -178,6 +201,9 @@ class HTTPClient:
 
     def post(self, *args, **kwargs):
         """Generic method to post data on server
+
+        Args:
+            See `send_request`.
 
         Returns:
             dict: response object from the server.
@@ -187,6 +213,9 @@ class HTTPClient:
     def put(self, *args, **kwargs):
         """Generic method to put data on server
 
+        Args:
+            See `send_request`.
+
         Returns:
             dict: response object from the server.
         """
@@ -195,6 +224,9 @@ class HTTPClient:
     def patch(self, *args, **kwargs):
         """Generic method to patch data on server
 
+        Args:
+            See `send_request`.
+
         Returns:
             dict: response object from the server.
         """
@@ -202,6 +234,9 @@ class HTTPClient:
 
     def delete(self, *args, **kwargs):
         """Generic method to patch data on server
+
+        Args:
+            See `send_request`.
 
         Returns:
             dict: response object from the server.
@@ -213,6 +248,11 @@ class HTTPClient:
 
         The authentication process relies on login/password which gives an
         authentication token. This token is stored in the instance.
+
+        Raises:
+            See `send_request_raw`.
+            AuthenticationError: if the connection is denied or if any onther
+                error occurs.
         """
         data = {"username": self.login, "password": self.password}
 
