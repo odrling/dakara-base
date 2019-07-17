@@ -1,3 +1,4 @@
+import json
 from queue import Queue
 from threading import Event
 from unittest import TestCase
@@ -434,7 +435,10 @@ class WebSocketClientTestCase(TestCase):
         self.client.send(message_type, data)
 
         # assert the call
-        self.client.websocket.send.assert_called_with(event)
+        # we have to parse the strings, as the order in the dictionary is not guaranteed
+        _, args, _ = self.client.websocket.send.mock_calls[0]
+        event_sent = args[0]
+        self.assertEqual(json.loads(event), json.loads(event_sent))
 
     def test_abort_connected(self):
         """Test to abort the connection
