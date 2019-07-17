@@ -210,14 +210,23 @@ class WebSocketClient(WorkerSafeTimer):
         """
 
     @connected
-    def send(self, content, *args, **kwargs):
-        """Send data from a dictionary
+    def send(self, message_type, data=None, *args, **kwargs):
+        """Send data to the server
 
-        Convert it to JSON string before send.
+        Convert it to JSON string before sending.
 
         Args:
-            content (dict): dictionary of the event.
+            message_type (str): type of the message.
+            data (any): serializable data to send.
+            Other arguments are passed to `websocket.WebSocketApp.send`.
         """
+        # add type to the content
+        content = {"type": message_type}
+
+        # add data to the content if any
+        if data:
+            content["data"] = data
+
         return self.websocket.send(json.dumps(content), *args, **kwargs)
 
     def abort(self):

@@ -390,17 +390,33 @@ class WebSocketClientTestCase(TestCase):
         # call the methods
         self.client.on_error(WebSocketConnectionClosedException("error"))
 
-    def test_send(self):
-        """Test a normal use of the function
+    def test_send_no_data(self):
+        """Test to send message without data
         """
-        event = '{"data": "data"}'
-        content = {"data": "data"}
+        event = '{"type": "my_type"}'
+        message_type = "my_type"
 
         # set the websocket
         self.set_websocket()
 
         # call the method
-        self.client.send(content)
+        self.client.send(message_type)
+
+        # assert the call
+        self.client.websocket.send.assert_called_with(event)
+
+    def test_send_data(self):
+        """Test to send message with data
+        """
+        event = '{"type": "my_type", "data": [1, 2, 3]}'
+        message_type = "my_type"
+        data = [1, 2, 3]
+
+        # set the websocket
+        self.set_websocket()
+
+        # call the method
+        self.client.send(message_type, data)
 
         # assert the call
         self.client.websocket.send.assert_called_with(event)
