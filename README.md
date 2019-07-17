@@ -22,6 +22,12 @@ This project is a collection of tools and helper modules for the Dakara Project.
 Install the package with:
 
 ```sh
+pip install dakarabase
+```
+
+If you have downloaded the repo, you can install the package directly with:
+
+```sh
 python setup.py install
 ```
 
