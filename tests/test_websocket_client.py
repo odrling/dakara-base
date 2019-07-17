@@ -275,6 +275,21 @@ class WebSocketClientTestCase(TestCase):
             ],
         )
 
+    def test_on_message_failed_no_type(self):
+        """Test the on message method when event has no type
+        """
+        event = '{"data": "data"}'
+
+        # call the method
+        with self.assertLogs("dakara_base.websocket_client", "DEBUG") as logger:
+            self.client.on_message(event)
+
+        # assert the effect on logger
+        self.assertListEqual(
+            logger.output,
+            ["ERROR:dakara_base.websocket_client:Event of no type received"],
+        )
+
     def test_on_error_closing(self):
         """Test the callback on error when the program is closing
 

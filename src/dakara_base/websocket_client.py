@@ -176,10 +176,18 @@ class WebSocketClient(WorkerSafeTimer):
             )
             return
 
+        # get the type of the message
+        try:
+            message_type = event["type"]
+
+        except KeyError:
+            logger.error("Event of no type received")
+            return
+
         # attempt to call the corresponding method
-        method_name = "receive_{}".format(event.get("type"))
+        method_name = "receive_{}".format(message_type)
         if not hasattr(self, method_name):
-            logger.error("Event of unknown type received '%s'", event["type"])
+            logger.error("Event of unknown type received '%s'", message_type)
             return
 
         getattr(self, method_name)(event.get("data"))
