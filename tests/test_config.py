@@ -66,7 +66,7 @@ class LoadConfigTestCase(TestCase):
         # assert the error
         self.assertEqual(str(error.exception), "No config file found")
 
-    @patch("dakara_base.config.yaml.load")
+    @patch("dakara_base.config.yaml.load", autospec=True)
     def test_load_config_fail_parser_error(self, mocked_load):
         """Test to load an invalid config file
         """
@@ -101,7 +101,7 @@ class CreateLoggerTestCase(TestCase):
     """Test the `create_logger` function
     """
 
-    @patch("dakara_base.config.coloredlogs.install")
+    @patch("dakara_base.config.coloredlogs.install", autospec=True)
     def test(self, mocked_install):
         """Test to call the method
         """
@@ -116,7 +116,7 @@ class SetLoglevelTestCase(TestCase):
     """Test the `set_loglevel` function
     """
 
-    @patch("dakara_base.config.coloredlogs.set_level")
+    @patch("dakara_base.config.coloredlogs.set_level", autospec=True)
     def test_configure_logger(self, mocked_set_level):
         """Test to configure the logger
         """
@@ -126,7 +126,7 @@ class SetLoglevelTestCase(TestCase):
         # assert the result
         mocked_set_level.assert_called_with("DEBUG")
 
-    @patch("dakara_base.config.coloredlogs.set_level")
+    @patch("dakara_base.config.coloredlogs.set_level", autospec=True)
     def test_configure_logger_no_level(self, mocked_set_level):
         """Test to configure the logger with no log level
         """

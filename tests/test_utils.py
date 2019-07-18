@@ -87,7 +87,7 @@ class CreateUrlTestCase(TestCase):
         with self.assertRaises(URLParameterError):
             create_url()
 
-    @patch("dakara_base.utils.furl")
+    @patch("dakara_base.utils.furl", autospec=True)
     def test_invalid_furl(self, mocked_furl):
         """Test to create URL with invalid arguments for furl
         """
