@@ -58,7 +58,7 @@ class GetFileTestCase(TestCase):
         # assert the result
         self.assertEqual(result, "path to resource")
 
-    @patch("dakara_base.resources_manager.resource_filename", autospec=True)
+    @patch("dakara_base.resources_manager.resource_filename")
     @patch("dakara_base.resources_manager.resource_exists", autospec=True)
     def test_fail(self, mocked_resource_exists, mocked_resource_filename):
         """Test to get a file that does not exist
@@ -132,7 +132,7 @@ class GenerateGetResourceTestCase(TestCase):
         # assert the result
         self.assertEqual(result, self.resource_path)
 
-    @patch("dakara_base.resources_manager.resource_filename", autospec=True)
+    @patch("dakara_base.resources_manager.resource_filename")
     def test_fail(self, mocked_resource_filename):
         """Test to get a resource that does not exist
         """
