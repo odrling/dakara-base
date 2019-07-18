@@ -83,7 +83,7 @@ class WebSocketClientTestCase(TestCase):
             self.errors,
             {"url": self.url, "reconnect_interval": self.reconnect_interval},
             header=self.header,
-            route="ws/",
+            endpoint="ws/",
         )
 
     def set_websocket(self):
@@ -382,8 +382,8 @@ class WebSocketClientTestCase(TestCase):
             ["WARNING:dakara_base.websocket_client:Unable to talk to the server"],
         )
 
-    def test_on_error_route(self):
-        """Test the callback on error when the route is invalid
+    def test_on_error_endpoint(self):
+        """Test the callback on error when the endpoint is invalid
         """
         # pre assert
         self.assertFalse(self.stop.is_set())

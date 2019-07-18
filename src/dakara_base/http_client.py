@@ -9,7 +9,7 @@ It is pretty straightforward to use.
 ...     "login": "login here",
 ...     "password": "password here",
 ... }
->>> client = HTTPClient(config, route="api/")
+>>> client = HTTPClient(config, endpoint_prefix="api/")
 >>> client.authenticate()
 >>> data = client.get("library/songs/")
 >>> client.post("library/songs", json={"title": "some title"})
@@ -69,7 +69,7 @@ class HTTPClient:
 
     Args:
         config (dict): config of the server.
-        route (str): prefix of the endpoint routes.
+        endpoint_prefix (str): prefix of the endpoint, added to the URL.
         mute_raise (bool): if true, no exception will be raised when performing
             connections with the server (but authentication), only logged.
 
@@ -78,13 +78,13 @@ class HTTPClient:
             configuration.
     """
 
-    def __init__(self, config, route="", mute_raise=False):
+    def __init__(self, config, endpoint_prefix="", mute_raise=False):
         self.mute_raise = mute_raise
 
         try:
             # url
             self.server_url = create_url(
-                **config, path=route, scheme_no_ssl="http", scheme_ssl="https"
+                **config, path=endpoint_prefix, scheme_no_ssl="http", scheme_ssl="https"
             )
 
             # authentication

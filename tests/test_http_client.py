@@ -75,7 +75,7 @@ class HTTPClientTestCase(TestCase):
         # create a ServerHTTPConnection instance
         self.client = HTTPClient(
             {"url": self.url, "login": self.login, "password": self.password},
-            route="api/",
+            endpoint_prefix="api/",
         )
 
     def set_token(self):
@@ -102,7 +102,7 @@ class HTTPClientTestCase(TestCase):
         """
         # try to create a client from invalid config
         with self.assertRaises(ParameterError) as error:
-            HTTPClient({"url": self.url}, route="api/")
+            HTTPClient({"url": self.url}, endpoint_prefix="api/")
 
         # assert the error
         self.assertEqual(

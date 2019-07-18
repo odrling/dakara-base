@@ -24,7 +24,7 @@ is a bit complex to setup:
 ...     "Authorization": "Token my-token-value"
 ... }
 >>> websocket_client = MyWebSocketClient(stop, errors, config,
-...                                      route="device/songs", header=header)
+...                                      endpoint="ws/", header=header)
 >>> websocket_client.timer.start()
 >>> websocket_client.timer.join()
 """
@@ -105,13 +105,14 @@ class WebSocketClient(WorkerSafeTimer):
     Args:
         config (dict): configuration for the server, the same as
             DakaraServerHTTPConnection.
+        endpoint (str): enpoint of the WebSocket connection, added to the URL.
         header (dict): header containing the authentication token.
     """
 
-    def init_worker(self, config, route="", header={}):
+    def init_worker(self, config, endpoint="", header={}):
         # url
         self.server_url = create_url(
-            **config, path=route, scheme_no_ssl="ws", scheme_ssl="wss"
+            **config, path=endpoint, scheme_no_ssl="ws", scheme_ssl="wss"
         )
 
         # other
