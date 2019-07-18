@@ -1,3 +1,30 @@
+"""Utils helper module
+
+This module regroups diverse helper functions.
+
+The `display_message` function truncates a string if it is longer than a certain limit:
+
+>>> string = "Lorem ipsum dolot sit amet."
+>>> display_message(string, limit=15)
+"Lorem ipsum ..."
+
+It was initialy designed to cut Django responses during development, as some
+internal errors could make the server to respond by a very long HTML message,
+polluting the logs.
+
+The `create_url` is an URL creator build on top of the furl module. It is
+typically designed to take a server config and forge an URL from it, wether the
+URL is explicitally defined, or its components are individually defined, such
+as host, port, etc.:
+
+>>> config = {
+...     "address": "www.example.com:8080",
+...     "ssl": True,
+...     "path": "api/",
+... }
+>>> create_url(**config, scheme_ssl="https", scheme_no_ssl="http")
+"https://www.example.com:8080/api/"
+"""
 from furl import furl
 
 from dakara_base.exceptions import DakaraError

@@ -1,3 +1,29 @@
+"""Resources manager helper module
+
+This modules provides some helpers to use the functions of the module
+pkg_resources. The `resource_listdir` has the same behavior as in
+pkg_resources, but it filters the special files whose name starts with "__"
+(like "__pycache__").
+
+The `get_file` function allows to get any file in the module using a Python
+module-like path called requirement. Suppose we have a file in
+"resources/art/icon.png", the resource can be accessed with:
+
+>>> get_file("resources.art", "icon.png")
+Path("/absolute/path/to/resources/art/icon.png")
+
+The `generate_get_resource` function is a function factory that generates
+functions which work like `get_file`, but for a predefined requirement. The
+main advantage is that it scans the filesystem only once, not at each call.
+Suppose we have the same file in "resources/art/icon.png":
+
+>>> list_arts = resource_listdir("resources.art", "")
+>>> get_art = generate_get_resource("resources.art", list_arts, "art")
+>>> get_art("icon.png")
+Path("/absolute/path/to/resources/art/icon.png")
+"""
+
+
 from pkg_resources import (
     resource_exists,
     resource_filename,

@@ -1,4 +1,4 @@
-"""Safe workers module
+"""Safe workers helper module
 
 This module provides some classes to facilitate the manipulaton of threads.
 Especially, it guarantees that a failure in a thread will be notified in the

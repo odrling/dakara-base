@@ -1,3 +1,21 @@
+"""HTTP client helper module
+
+This module provides an HTTP client class, build on the requests library. The
+class is designed to be used with an API which communicates with JSON messages.
+It is pretty straightforward to use.
+
+>>> config = {
+...     "url": "http://www.example.com",
+...     "login": "login here",
+...     "password": "password here",
+... }
+>>> client = HTTPClient(config, route="api/")
+>>> client.authenticate()
+>>> data = client.get("library/songs/")
+>>> client.post("library/songs", json={"title": "some title"})
+"""
+
+
 import logging
 
 from furl import furl
@@ -35,7 +53,10 @@ def authenticated(fun):
 class HTTPClient:
     """HTTP client designed to work with an API
 
-    The client uses a token authentication policy only.
+    The API must use JSON for message content.
+
+    The client uses a token credential policy only and authenticated with
+    traditional login/password mechanism.
 
     Attributes:
         mute_raise (bool): if true, no exception will be raised when performing
@@ -172,8 +193,10 @@ class HTTPClient:
             when communicating with the server and `mute_raise` is set.
 
         Raises:
-            ResponseError: if there is an error durring communication with the
-                server, only if `mute_raise` is not set.
+            MethodError: if the method is not supported.
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         try:
             # make the request
@@ -192,10 +215,24 @@ class HTTPClient:
         """Generic method to get data on server
 
         Args:
-            See `send_request`.
+            endpoint (str): endpoint to sent the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("get", *args, **kwargs))
 
@@ -203,10 +240,24 @@ class HTTPClient:
         """Generic method to post data on server
 
         Args:
-            See `send_request`.
+            endpoint (str): endpoint to sent the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("post", *args, **kwargs))
 
@@ -214,10 +265,24 @@ class HTTPClient:
         """Generic method to put data on server
 
         Args:
-            See `send_request`.
+            endpoint (str): endpoint to sent the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("put", *args, **kwargs))
 
@@ -225,10 +290,24 @@ class HTTPClient:
         """Generic method to patch data on server
 
         Args:
-            See `send_request`.
+            endpoint (str): endpoint to sent the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("patch", *args, **kwargs))
 
@@ -236,10 +315,24 @@ class HTTPClient:
         """Generic method to patch data on server
 
         Args:
-            See `send_request`.
+            endpoint (str): endpoint to sent the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("delete", *args, **kwargs))
 

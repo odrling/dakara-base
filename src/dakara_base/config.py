@@ -1,3 +1,24 @@
+"""Config helper module
+
+This module gives a config loader function `load_config` that reads a YAML
+config file:
+
+>>> from path import Path
+>>> config = load_config(Path("path/to/file.yaml"), debug=True)
+
+The module has two functions to configure loaders: `create_logger`, which
+installs the loader using coloredlogs, and `set_loglevel`, which sets the
+loglevel of the logger according to the config. Usually, you call the first one
+before reading the config, as `load_config` needs a logger, then call the
+latter one:
+
+>>> create_logger()
+>>> from path import Path
+>>> config = load_config(Path("path/to/file.yaml"), debug=True)
+>>> set_loglevel(config)
+"""
+
+
 import logging
 
 import coloredlogs
@@ -14,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_config(config_path, debug, mandatory_keys=None):
-    """Load config from given config file
+    """Load config from given YAML config file
 
     Args:
         config_path (path.Path): path to the config file.

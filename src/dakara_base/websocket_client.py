@@ -1,3 +1,35 @@
+"""WebSocket client helper module
+
+This module provides a WebSocket client class, using the websocket_client
+library. The class is designed to work with servers sending JSON messages. The
+message received from the server must be handled by custom methods,
+consequently the class cannot be used directly:
+
+>>> MyWebSocketClient(WebSocketClient):
+...     def recieve_new_song(self, data):
+...         pass
+
+The websocket client uses a token to authenticate to the server. The token can
+be optained by the `HTTPClient` class from the `http_client` module. The client
+is a bit complex to setup:
+
+>>> from theading import Event
+>>> from queue import Queue
+>>> stop = Event()
+>>> errors = Queue()
+>>> config = {
+...     "url": "ws://www.example.com"
+... }
+>>> header = {
+...     "Authorization": "Token my-token-value"
+... }
+>>> websocket_client = MyWebSocketClient(stop, errors, config,
+...                                      route="device/songs", header=header)
+>>> websocket_client.timer.start()
+>>> websocket_client.timer.join()
+"""
+
+
 import json
 import logging
 
@@ -48,8 +80,16 @@ class WebSocketClient(WorkerSafeTimer):
         * `type` (str): the type of the message, mandatory.
         * `data` (anything): the content of the message, optional.
 
-    On receiving a message, the client will call the method corresponding its
-    type, which name is `receive_<type of the message here>`.
+    On receiving a message, the client will call the method corresponding to
+    its type, which name is `receive_<type of the message here>`. The method
+    must accept one argument, which is the `data` key of the message.
+
+    If the client is disconnected to the server, it tries to reconnect every
+    `reconnect_interval` seconds.
+
+    Being a `safe_workers.WorkerSafeTimer`, any non caught exception in
+    callbacks will stop the entire program. Also, the class is a context
+    manager which abort the connection on exit.
 
     Attributes:
         server_url (str): URL of the server.
