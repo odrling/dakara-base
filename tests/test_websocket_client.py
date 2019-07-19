@@ -423,6 +423,21 @@ class WebSocketClientTestCase(TestCase):
         # assert the call
         self.client.websocket.send.assert_called_with(event)
 
+    def test_send_data_falsy(self):
+        """Test to send message with falsy data
+        """
+        event = '{"type": "my_type", "data": 0}'
+        message_type = "my_type"
+
+        # set the websocket
+        self.set_websocket()
+
+        # call the method
+        self.client.send(message_type, 0)
+
+        # assert the call
+        self.client.websocket.send.assert_called_with(event)
+
     def test_send_data(self):
         """Test to send message with data
         """

@@ -304,7 +304,7 @@ class WebSocketClient(WorkerSafeTimer):
         content = {"type": message_type}
 
         # add data to the content if any
-        if data:
+        if data is not None:
             content["data"] = data
 
         return self.websocket.send(json.dumps(content), *args, **kwargs)
