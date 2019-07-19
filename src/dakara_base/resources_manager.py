@@ -1,3 +1,29 @@
+"""Resources manager helper module
+
+This module provides some helpers to use the functions of the module
+pkg_resources morre efficiently. The `resource_listdir` has the same behavior
+as in pkg_resources, but it filters special files whose name starts with "__"
+(like "__pycache__").
+
+The `get_file` function allows to get any file in the module using a Python
+module-like path called requirement. Suppose we have a file in
+"resources/art/icon.png", the resource can be accessed with:
+
+>>> get_file("resources.art", "icon.png")
+Path("/absolute/path/to/resources/art/icon.png")
+
+The `generate_get_resource` function is a function factory that generates
+functions which work like `get_file`, but for a predefined requirement. The
+main advantage is that it scans the filesystem only once, not at each call.
+Suppose we have the same file in "resources/art/icon.png":
+
+>>> list_arts = resource_listdir("resources.art", "")
+>>> get_art = generate_get_resource("resources.art", list_arts, "art")
+>>> get_art("icon.png")
+Path("/absolute/path/to/resources/art/icon.png")
+"""
+
+
 from pkg_resources import (
     resource_exists,
     resource_filename,
@@ -11,6 +37,12 @@ from dakara_base.exceptions import DakaraError
 
 def resource_listdir(*args, **kwargs):
     """List resources without special files
+
+    Args:
+        See `pkg_resources.resource_listdir`.
+
+    Returns:
+        list: List of filenames.
     """
     return [
         filename
@@ -24,7 +56,7 @@ def get_file(resource, filename):
 
     Args:
         resource (str): requirement.
-        filename (str): name or path to the file.
+        filename (str): filename or path to the file.
 
     Returns:
         path.Path: absolute path of the file.
@@ -45,7 +77,7 @@ def generate_get_resource(resource, resource_list, resource_name):
 
     Args:
         resource (str): requirement.
-        resource_list (list of str): list of files within the requirement.
+        resource_list (list): list of filenames within the requirement.
         resource_name (str): human readable name of the resource.
 
     Returns:

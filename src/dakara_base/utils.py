@@ -1,11 +1,51 @@
+"""Utils helper module
+
+This module regroups diverse helper functions.
+
+The `truncate_message` function truncates a string if its width is langer than a
+certain limit:
+
+>>> string = "Lorem ipsum dolot sit amet."
+>>> truncate_message(string, limit=15)
+"Lorem ipsum..."
+
+It was initialy designed to cut Django responses during development, as some
+internal errors could make the server to respond by a very long HTML message,
+polluting the logs.
+
+The `create_url` is an URL creator build on top of the furl module. It is
+typically designed to take a server config and forge an URL from it, wether the
+URL is explicitally defined, or its components are individually defined, such
+as host, port, etc.:
+
+>>> config = {
+...     "address": "www.example.com:8080",
+...     "ssl": True,
+...     "path": "api/",
+... }
+>>> create_url(**config)
+"https://www.example.com:8080/api/"
+"""
 from furl import furl
 
 from dakara_base.exceptions import DakaraError
 
 
-def display_message(message, limit=100):
-    """Display the 100 first characters of a message
+def truncate_message(message, limit=100):
+    """Display the first characters of a message
+
+    The message is truncated using ellipsis and stripped to avoid blank spaces
+    before the ellipsis.
+
+    Args:
+        message (str): message to truncate.
+        limit (int): maximum size of the message.
+
+    Returns:
+        str: truncated message.
     """
+    assert limit - 3 > 0, "Limit too short"
+
     if len(message) <= limit:
         return message
 
@@ -19,16 +59,17 @@ def create_url(
     port=None,
     path="",
     ssl=False,
-    scheme_no_ssl="",
-    scheme_ssl="",
+    scheme_no_ssl="http",
+    scheme_ssl="https",
     **kwargs
 ):
     """Create an URL from arguments
 
-    If `url` is given, the function returns it directly.  If neither `host` nor
-    `port` are given, they are extracted from `address` with the `host:port`
-    format.  If `ssl` is given and True, `scheme_ssl` is used, otherewise
-    `scheme_no_ssl` is used.  If `path` is given, it is appended to the URL.
+    If `url` is given, the function returns it with `path` appended. If no
+    `host` is given, `host` and `port` are extracted from `address` with the
+    `host:port` format.  If `ssl` is given and True, `scheme_ssl` is used,
+    otherewise `scheme_no_ssl` is used.  If `path` is given, it is appended to
+    the URL.
 
     Args:
         url (str): direct URL.
@@ -39,9 +80,14 @@ def create_url(
         ssl (bool): use a secured URL or not.
         scheme_no_ssl (str): scheme used if `ssl` is false.
         scheme_ssl (str): scheme used if `ssl` is true.
+        Any other argument is ignored.
 
     Returns:
         str: URL string.
+
+    Raises:
+        URLParameterError: if `scheme` or `host` cannot be defined, or if the
+            parameters are invalid to `furl.furl`.
     """
     # setting URL directly
     if url:

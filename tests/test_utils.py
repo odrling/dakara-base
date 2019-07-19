@@ -1,10 +1,10 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from dakara_base.utils import display_message, create_url, URLParameterError
+from dakara_base.utils import truncate_message, create_url, URLParameterError
 
 
-class DisplayMessageTestCase(TestCase):
+class TruncateMessageTestCase(TestCase):
     """Test the message display helper
     """
 
@@ -12,7 +12,7 @@ class DisplayMessageTestCase(TestCase):
         """Test a small message is completelly displayed
         """
         message = "few characters"
-        message_displayed = display_message(message, limit=50)
+        message_displayed = truncate_message(message, limit=50)
 
         self.assertLessEqual(len(message_displayed), 50)
         self.assertEqual(message_displayed, "few characters")
@@ -21,10 +21,22 @@ class DisplayMessageTestCase(TestCase):
         """Test a long message is cut
         """
         message = "few characters"
-        message_displayed = display_message(message, limit=5)
+        message_displayed = truncate_message(message, limit=5)
 
         self.assertLessEqual(len(message_displayed), 5)
         self.assertEqual(message_displayed, "fe...")
+
+    def test_too_short_limit(self):
+        """Test a too short limit
+
+        This case is marginal.
+        """
+        message = "few characters"
+
+        with self.assertRaises(AssertionError) as error:
+            truncate_message(message, limit=2)
+
+        self.assertEqual(str(error.exception), "Limit too short")
 
 
 class CreateUrlTestCase(TestCase):
@@ -87,7 +99,7 @@ class CreateUrlTestCase(TestCase):
         with self.assertRaises(URLParameterError):
             create_url()
 
-    @patch("dakara_base.utils.furl")
+    @patch("dakara_base.utils.furl", autospec=True)
     def test_invalid_furl(self, mocked_furl):
         """Test to create URL with invalid arguments for furl
         """

@@ -75,7 +75,7 @@ class HTTPClientTestCase(TestCase):
         # create a ServerHTTPConnection instance
         self.client = HTTPClient(
             {"url": self.url, "login": self.login, "password": self.password},
-            route="api/",
+            endpoint_prefix="api/",
         )
 
     def set_token(self):
@@ -102,14 +102,14 @@ class HTTPClientTestCase(TestCase):
         """
         # try to create a client from invalid config
         with self.assertRaises(ParameterError) as error:
-            HTTPClient({"url": self.url}, route="api/")
+            HTTPClient({"url": self.url}, endpoint_prefix="api/")
 
         # assert the error
         self.assertEqual(
             str(error.exception), "Missing parameter in server config: 'login'"
         )
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_successful(self, mocked_post):
         """Test to send a raw request with the generic method
         """
@@ -148,7 +148,7 @@ class HTTPClientTestCase(TestCase):
                 message_on_error="error message",
             )
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_error_request(self, mocked_post):
         """Test to send a raw request when there is a communication error
         """
@@ -180,7 +180,7 @@ class HTTPClientTestCase(TestCase):
             ],
         )
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_error_response(self, mocked_post):
         """Test to send a raw request when the response is invalid
         """
@@ -192,7 +192,7 @@ class HTTPClientTestCase(TestCase):
             with self.assertRaises(ResponseInvalidError):
                 self.client.send_request_raw("post", "endpoint/")
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_error_response_custom(self, mocked_post):
         """Test to send a raw request when the response is invalid and a error function given
         """
@@ -213,7 +213,7 @@ class HTTPClientTestCase(TestCase):
                     "post", "endpoint/", function_on_error=on_error
                 )
 
-    @patch.object(HTTPClient, "send_request_raw")
+    @patch.object(HTTPClient, "send_request_raw", autospec=True)
     def test_send_request_successful(self, mocked_send_request_raw):
         """Test to send a successful request
         """
@@ -221,16 +221,18 @@ class HTTPClientTestCase(TestCase):
         self.set_token()
 
         # call the method
-        self.client.send_request("endpoint/", data={"key": "value"})
+        self.client.send_request("post", "endpoint/", json={"key": "value"})
 
         # assert the call
         mocked_send_request_raw.assert_called_with(
+            self.client,
+            "post",
             "endpoint/",
             headers={"Authorization": "Token token value"},
-            data={"key": "value"},
+            json={"key": "value"},
         )
 
-    @patch.object(HTTPClient, "send_request_raw")
+    @patch.object(HTTPClient, "send_request_raw", autospec=True)
     def test_send_request_error_raised(self, mocked_send_request_raw):
         """Test to send an unsuccessful request which is not muted
         """
@@ -242,9 +244,9 @@ class HTTPClientTestCase(TestCase):
 
         # call the method
         with self.assertRaises(ResponseInvalidError):
-            self.client.send_request("endpoint/", data={"key": "value"})
+            self.client.send_request("post", "endpoint/", json={"key": "value"})
 
-    @patch.object(HTTPClient, "send_request_raw")
+    @patch.object(HTTPClient, "send_request_raw", autospec=True)
     def test_send_request_error_muted(self, mocked_send_request_raw):
         """Test to send an unsuccessful request which is muted
         """
@@ -256,16 +258,16 @@ class HTTPClientTestCase(TestCase):
         mocked_send_request_raw.side_effect = ResponseInvalidError("invalid")
 
         # call the method
-        response = self.client.send_request("endpoint/", data={"key": "value"})
+        response = self.client.send_request("post", "endpoint/", json={"key": "value"})
 
         # assert the response is None
         self.assertIsNone(response)
 
-    @patch("dakara_base.http_client.requests.delete")
-    @patch("dakara_base.http_client.requests.patch")
-    @patch("dakara_base.http_client.requests.put")
-    @patch("dakara_base.http_client.requests.post")
-    @patch("dakara_base.http_client.requests.get")
+    @patch("dakara_base.http_client.requests.delete", autospec=True)
+    @patch("dakara_base.http_client.requests.patch", autospec=True)
+    @patch("dakara_base.http_client.requests.put", autospec=True)
+    @patch("dakara_base.http_client.requests.post", autospec=True)
+    @patch("dakara_base.http_client.requests.get", autospec=True)
     def test_methods(
         self, mocked_get, mocked_post, mocked_put, mocked_patch, mocked_delete
     ):
@@ -298,7 +300,7 @@ class HTTPClientTestCase(TestCase):
         mocked_patch.assert_called_with(self.url_endpoint, headers=ANY)
         mocked_delete.assert_called_with(self.url_endpoint, headers=ANY)
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_authenticate_successful(self, mocked_post):
         """Test a successful authentication with the server
         """
@@ -315,7 +317,7 @@ class HTTPClientTestCase(TestCase):
 
         # call assertions
         mocked_post.assert_called_with(
-            self.url_login, data={"username": self.login, "password": self.password}
+            self.url_login, json={"username": self.login, "password": self.password}
         )
 
         # post assertions
@@ -334,7 +336,7 @@ class HTTPClientTestCase(TestCase):
             ],
         )
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_authenticate_error_network(self, mocked_post):
         """Test a network error when authenticating
         """
@@ -346,7 +348,7 @@ class HTTPClientTestCase(TestCase):
             with self.assertLogs("dakara_base.http_client", "DEBUG"):
                 self.client.authenticate()
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_authenticate_error_authentication(self, mocked_post):
         """Test an authentication error when authenticating
         """
@@ -359,7 +361,7 @@ class HTTPClientTestCase(TestCase):
             with self.assertLogs("dakara_base.http_client", "DEBUG"):
                 self.client.authenticate()
 
-    @patch("dakara_base.http_client.requests.post")
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_authenticate_error_other(self, mocked_post):
         """Test a server error when authenticating
         """

@@ -1,10 +1,28 @@
+"""HTTP client helper module
+
+This module provides the HTTP client class `HTTPClient`, built on the requests
+library. The class is designed to be used with an API which communicates with
+JSON messages.  It is pretty straightforward to use:
+
+>>> config = {
+...     "url": "http://www.example.com",
+...     "login": "login here",
+...     "password": "password here",
+... }
+>>> client = HTTPClient(config, endpoint_prefix="api/")
+>>> client.authenticate()
+>>> data = client.get("library/songs/")
+>>> client.post("library/songs", json={"title": "some title"})
+"""
+
+
 import logging
 
 from furl import furl
 import requests
 
 from dakara_base.exceptions import DakaraError
-from dakara_base.utils import display_message, create_url
+from dakara_base.utils import truncate_message, create_url
 
 
 logger = logging.getLogger(__name__)
@@ -13,7 +31,8 @@ logger = logging.getLogger(__name__)
 def authenticated(fun):
     """Decorator that ensures the token is set
 
-    It makes sure that the given function is callel once authenticated.
+    It makes sure that the given function is called only if authenticated. If
+    not authenticated, calling the function will raise a `NotAuthenticatedError`.
 
     Args:
         fun (function): function to decorate.
@@ -32,22 +51,39 @@ def authenticated(fun):
 
 
 class HTTPClient:
-    """HTTP client connected to an API
+    """HTTP client designed to work with an API
+
+    The API must use JSON for message content.
+
+    The client uses a token credential policy only and authenticates with a
+    traditional login/password mechanism.
+
+    Attributes:
+        mute_raise (bool): if true, no exception will be raised when performing
+            connections with the server (but authentication), only logged.
+        server_url (str): URL of the server.
+        token (str): value of the token. The token is set when successfuly
+            calling `authenticate`.
+        login (str): login used for authentication.
+        password (str): password used for authentication.
 
     Args:
         config (dict): config of the server.
-        mute_raise (bool): if true, no connection exception will be
-            raised, but only logged.
+        endpoint_prefix (str): prefix of the endpoint, added to the URL.
+        mute_raise (bool): if true, no exception will be raised when performing
+            connections with the server (but authentication), only logged.
+
+    Raises:
+        ParameterError: if critical parameters cannot be found in the
+            configuration.
     """
 
-    def __init__(self, config, route="", mute_raise=False):
+    def __init__(self, config, endpoint_prefix="", mute_raise=False):
         self.mute_raise = mute_raise
 
         try:
             # url
-            self.server_url = create_url(
-                **config, path=route, scheme_no_ssl="http", scheme_ssl="https"
-            )
+            self.server_url = create_url(**config, path=endpoint_prefix)
 
             # authentication
             self.token = None
@@ -70,17 +106,20 @@ class HTTPClient:
     ):
         """Generic method to send requests to the server
 
-        It takes care of errors.
+        It takes care of errors and raises exceptions.
 
         Args:
             method (str): name of the HTTP method to use.
-            endpoint (str): endpoint to sent the request to. Will be added to
-                the end of the URL.
+            endpoint (str): endpoint to send the request to. Will be added to
+                the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
             function_on_error (function): fuction called if the request is not
                 successful, it will receive the response and must return an
-                exception that will be raised.
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get/post/put/patch/delete
+                methods.
 
         Returns:
             requests.models.Response: response object.
@@ -116,7 +155,7 @@ class HTTPClient:
                 "Error when communicating with the server: {}".format(error)
             ) from error
 
-        # return here if everything is the request was made without error
+        # return here if the request was made without error
         if response.ok:
             return response
 
@@ -127,7 +166,7 @@ class HTTPClient:
         # otherwise manage error generically
         logger.error(message_on_error)
         logger.debug(
-            "Error %i: %s", response.status_code, display_message(response.text)
+            "Error %i: %s", response.status_code, truncate_message(response.text)
         )
 
         raise ResponseInvalidError(
@@ -152,8 +191,10 @@ class HTTPClient:
             when communicating with the server and `mute_raise` is set.
 
         Raises:
-            ResponseError: if there is an error durring communication with the
-                server, only if `mute_raise` is not set.
+            MethodError: if the method is not supported.
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         try:
             # make the request
@@ -171,48 +212,134 @@ class HTTPClient:
     def get(self, *args, **kwargs):
         """Generic method to get data on server
 
+        Args:
+            endpoint (str): endpoint to send the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' get method.
+
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("get", *args, **kwargs))
 
     def post(self, *args, **kwargs):
         """Generic method to post data on server
 
+        Args:
+            endpoint (str): endpoint to send the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' post method.
+
+
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("post", *args, **kwargs))
 
     def put(self, *args, **kwargs):
         """Generic method to put data on server
 
+        Args:
+            endpoint (str): endpoint to send the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' put method.
+
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("put", *args, **kwargs))
 
     def patch(self, *args, **kwargs):
         """Generic method to patch data on server
 
+        Args:
+            endpoint (str): endpoint to send the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' patch method.
+
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("patch", *args, **kwargs))
 
     def delete(self, *args, **kwargs):
         """Generic method to patch data on server
 
+        Args:
+            endpoint (str): endpoint to send the request to. Will be added to
+                the end of the server URL.
+            message_on_error (str): message to display in logs in case of
+                error. It should describe what the request was about.
+            function_on_error (function): fuction called if the request is not
+                successful, it will receive the response and must return an
+                exception that will be raised. If not provided, a basic error
+                management is done.
+            Extra arguments are passed to requests' delete method.
+
         Returns:
             dict: response object from the server.
+
+        Raises:
+            ResponseRequestError: for any error when communicating with the server.
+            ResponseInvalidError: if the response has an error code different
+                to 2**.
         """
         return self.get_json_from_response(self.send_request("delete", *args, **kwargs))
 
     def authenticate(self):
-        """Connect to the server
+        """Authenticate with the server
 
         The authentication process relies on login/password which gives an
         authentication token. This token is stored in the instance.
+
+        Raises:
+            See `send_request_raw`.
+            AuthenticationError: if the connection is denied or if any onther
+                error occurs.
         """
         data = {"username": self.login, "password": self.password}
 
@@ -226,7 +353,7 @@ class HTTPClient:
             # manage any other error
             return AuthenticationError(
                 "Unable to authenticate to the server, error {code}: {message}".format(
-                    code=response.status_code, message=display_message(response.text)
+                    code=response.status_code, message=truncate_message(response.text)
                 )
             )
 
@@ -237,7 +364,7 @@ class HTTPClient:
             "token-auth/",
             message_on_error="Unable to authenticate to the server",
             function_on_error=on_error,
-            data=data,
+            json=data,
         )
 
         # store token
@@ -249,7 +376,7 @@ class HTTPClient:
     def get_token_header(self):
         """Get the connection token as it should appear in the header
 
-        Can be called only once login has been sucessful.
+        Can be called only after a successful authentication.
 
         Returns:
             dict: formatted token.
@@ -273,7 +400,7 @@ class HTTPClient:
 
 
 class ResponseError(DakaraError):
-    """Error when communicating with the server
+    """Generic error when communicating with the server
     """
 
 

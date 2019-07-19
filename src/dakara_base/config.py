@@ -1,3 +1,24 @@
+"""Config helper module
+
+This module gives a config loader function `load_config` that reads a YAML
+config file:
+
+>>> from path import Path
+>>> config = load_config(Path("path/to/file.yaml"), debug=True)
+
+The module has two functions to configure loaders: `create_logger`, which
+installs the logger using coloredlogs, and `set_loglevel`, which sets the
+loglevel of the logger according to the config. Usually, you call the first one
+before reading the config, as `load_config` needs a logger, then call the
+latter one:
+
+>>> create_logger()
+>>> from path import Path
+>>> config = load_config(Path("path/to/file.yaml"), debug=True)
+>>> set_loglevel(config)
+"""
+
+
 import logging
 
 import coloredlogs
@@ -14,20 +35,22 @@ logger = logging.getLogger(__name__)
 
 
 def load_config(config_path, debug, mandatory_keys=None):
-    """Load config from given config file
+    """Load config from given YAML file
 
     Args:
         config_path (path.Path): path to the config file.
-        debug (bool): run in debug mode.
+        debug (bool): run in debug mode. This creates or overwrites the
+            `loglovel` key of the config to "DEBUG".
         mandatory_keys (list): list of keys that must be present at the root
-            node of the config.
+            level of the config.
 
     Returns:
         dict: dictionary of the config.
 
     Raises:
-        ConfigError: if the config file cannot be open, cannot be parsed or
-        misses critical sections.
+        ConfigNotFoundError: if the config file cannot be open.
+        ConfigParseError: if the config cannot be parsed.
+        ConfigInvalidError: if the config misses critical sections.
     """
     logger.info("Loading config file '%s'", config_path)
 
@@ -68,15 +91,14 @@ def set_loglevel(config):
     """Set logger level
 
     Arguments:
-        config (dict): dictionary of the config containing at least the
-            `loglevel` key.
+        config (dict): dictionary of the config.
     """
     loglevel = config.get("loglevel", LOG_LEVEL)
     coloredlogs.set_level(loglevel)
 
 
 class ConfigError(DakaraError):
-    """Error raised for invalid configuration file
+    """Generic error raised for invalid configuration file
     """
 
 

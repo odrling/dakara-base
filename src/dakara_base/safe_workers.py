@@ -1,4 +1,4 @@
-"""Safe workers module
+"""Safe workers helper module
 
 This module provides some classes to facilitate the manipulaton of threads.
 Especially, it guarantees that a failure in a thread will be notified in the
@@ -13,7 +13,9 @@ of a `WorkerSafeThread` class untill internal error or user interrupt (Ctrl+C).
 
 A main concept of this module is that a Python Event object is shared among the
 instances of the classes of this module. This event is reffered as the stop
-event, as it can be used to stop the program.
+event, as it can be used to stop the program. A Python Queue object is also
+shared among the different instances and allows to retreive exceptions raised
+in sub-threads by the main one.
 
 >>> from threading import Event
 >>> from queue import Queue
@@ -24,6 +26,7 @@ event, as it can be used to stop the program.
 >>> worker_with_timer = WorkerSafeTimer(stop, errors)
 >>> worker.stop.set()
 >>> worker_with_thread.stop.is_set()
+True
 """
 
 
@@ -89,6 +92,12 @@ class BaseSafeThread:
             program when set.
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
+
+    Args:
+        stop (threading.Event): stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): error queue to communicate the exception to the
+            main thread.
     """
 
     def __init__(self, stop, errors, *args, **kwargs):
@@ -127,6 +136,12 @@ class SafeThread(BaseSafeThread, Thread):
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
 
+    Args:
+        stop (threading.Event): stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): error queue to communicate the exception to the
+            main thread.
+
     Consult the help of `threading.Thread` for more information.
     """
 
@@ -150,6 +165,12 @@ class SafeTimer(BaseSafeThread, Timer):
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
 
+    Args:
+        stop (threading.Event): stop event that notify to stop the entire
+            program when set.
+        errors (queue.Queue): error queue to communicate the exception to the
+            main thread.
+
     Consult the help of `threading.timer` for more information.
     """
 
@@ -160,7 +181,7 @@ class BaseWorker:
     """Base worker class
 
     The base worker is bound to a stop event which when triggered will stop the
-    program. It has also an errors queue to communicate errors to the main
+    program. It also has an errors queue to communicate errors to the main
     thread.
 
     It behaves like a context manager that returns itself on enter and triggers
@@ -180,6 +201,10 @@ class BaseWorker:
             program when set.
         errors (queue.Queue): error queue to communicate the exception to the
             main thread.
+
+    Raises:
+        AssertionError: if the `stop` or `errors` arguments are not
+            respectivily Event and Queue.
     """
 
     def __init__(self, stop, errors):
@@ -227,6 +252,9 @@ class BaseWorker:
     def create_thread(self, *args, **kwargs):
         """Helper to easily create a SafeThread object.
 
+        Args:
+            See `threading.Thread`.
+
         Returns:
             SafeThread: secured thread instance.
         """
@@ -234,6 +262,9 @@ class BaseWorker:
 
     def create_timer(self, *args, **kwargs):
         """Helper to easily create a SafeTimer object.
+
+        Args:
+            See `threading.Timer`.
 
         Returns:
             SafeTimer: secured timer thread instance.
@@ -245,7 +276,7 @@ class Worker(BaseWorker):
     """Worker class
 
     The worker is bound to a stop event which when triggered will stop the
-    program. It has also an errors queue to communicate errors to the main
+    program. It also has an errors queue to communicate errors to the main
     thread.
 
     It behaves like a context manager that returns itself on enter and triggers
@@ -299,7 +330,7 @@ class WorkerSafeTimer(BaseWorker):
     """Worker class with safe timer
 
     The worker class with safe timer is bound to a stop event which when
-    triggered will stop the program. It has also an errors queue to communicate
+    triggered will stop the program. It also has an errors queue to communicate
     errors to the main thread.
 
     It contains a timer thread `timer` connected to a dummy function which must
@@ -386,7 +417,7 @@ class WorkerSafeThread(BaseWorker):
     """Worker class with safe thread
 
     The worker class with safe thread is bound to a stop event which when
-    triggered will stop the program. It has also an errors queue to communicate
+    triggered will stop the program. It also has an errors queue to communicate
     errors to the main thread.
 
     It contains a thread `thread` connected to a dummy function which must de
@@ -495,7 +526,7 @@ class Runner:
         # extra actions
         self.init_runner(*args, **kwargs)
 
-    def init_runner(self):
+    def init_runner(self, *args, **kwargs):
         """Custom initialization stub
         """
         pass
@@ -510,7 +541,7 @@ class Runner:
             WorkerClass (WorkerSafeThread): worker class with safe thread.
                 Note you have to pass a custom class based on
                 `WorkerSafeThread`.
-            args, kwargs: arguments to pass to the thread of WorkerClass.
+            Other arguments are passed to the thread of WorkerClass.
         """
         try:
             # create worker thread

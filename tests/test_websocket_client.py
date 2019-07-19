@@ -1,3 +1,4 @@
+import json
 from queue import Queue
 from threading import Event
 from unittest import TestCase
@@ -82,7 +83,7 @@ class WebSocketClientTestCase(TestCase):
             self.errors,
             {"url": self.url, "reconnect_interval": self.reconnect_interval},
             header=self.header,
-            route="ws/",
+            endpoint="ws/",
         )
 
     def set_websocket(self):
@@ -90,15 +91,15 @@ class WebSocketClientTestCase(TestCase):
         """
         self.client.websocket = MagicMock()
 
-    @patch.object(WebSocketClient, "set_default_callbacks")
+    @patch.object(WebSocketClient, "set_default_callbacks", autospec=True)
     def test_init_worker(self, mocked_set_default_callbacks):
         """Test the initialization
         """
         # create the object
-        WebSocketClient(self.stop, self.errors, {"url": self.url})
+        client = WebSocketClient(self.stop, self.errors, {"url": self.url})
 
         # assert the call
-        mocked_set_default_callbacks.assert_called_once_with()
+        mocked_set_default_callbacks.assert_called_once_with(client)
 
         # use the already created client object
         self.assertEqual(self.client.server_url, self.url_ws)
@@ -121,7 +122,7 @@ class WebSocketClientTestCase(TestCase):
         # post assert the callback is now set
         self.assertIs(self.client.callbacks.get("test"), callback)
 
-    @patch.object(WebSocketClient, "abort")
+    @patch.object(WebSocketClient, "abort", autospec=True)
     def test_exit_worker(self, mocked_abort):
         """Test to exit the worker
         """
@@ -136,9 +137,9 @@ class WebSocketClientTestCase(TestCase):
         )
 
         # assert the call
-        mocked_abort.assert_called_with()
+        mocked_abort.assert_called_with(self.client)
 
-    @patch.object(WebSocketClient, "on_connected")
+    @patch.object(WebSocketClient, "on_connected", autospec=True)
     def test_on_open(self, mocked_on_connected):
         """Test the callback on connection open
         """
@@ -156,7 +157,7 @@ class WebSocketClientTestCase(TestCase):
         )
 
         # assert the call
-        mocked_on_connected.assert_called_with()
+        mocked_on_connected.assert_called_with(self.client)
 
     @patch.object(WebSocketClient, "create_timer")
     @patch.object(WebSocketClient, "on_connection_lost")
@@ -194,8 +195,8 @@ class WebSocketClientTestCase(TestCase):
         mocked_create_timer.assert_not_called()
         mocked_on_connection_lost.assert_not_called()
 
-    @patch.object(WebSocketClient, "create_timer")
-    @patch.object(WebSocketClient, "on_connection_lost")
+    @patch.object(WebSocketClient, "create_timer", autospec=True)
+    @patch.object(WebSocketClient, "on_connection_lost", autospec=True)
     def test_on_close_retry(self, mocked_on_connection_lost, mocked_create_timer):
         """Test the callback on connection close when connection should retry
         """
@@ -222,9 +223,11 @@ class WebSocketClientTestCase(TestCase):
         )
 
         # assert the different calls
-        mocked_create_timer.assert_called_with(self.reconnect_interval, self.client.run)
+        mocked_create_timer.assert_called_with(
+            self.client, self.reconnect_interval, self.client.run
+        )
         mocked_create_timer.return_value.start.assert_called_with()
-        mocked_on_connection_lost.assert_called_with()
+        mocked_on_connection_lost.assert_called_with(self.client)
 
     @patch.object(WebSocketClient, "receive_dummy", create=True)
     def test_on_message_successful(self, mocked_receive_dummy):
@@ -273,6 +276,21 @@ class WebSocketClientTestCase(TestCase):
                 "ERROR:dakara_base.websocket_client:"
                 "Event of unknown type received 'dummy'"
             ],
+        )
+
+    def test_on_message_failed_no_type(self):
+        """Test the on message method when event has no type
+        """
+        event = '{"data": "data"}'
+
+        # call the method
+        with self.assertLogs("dakara_base.websocket_client", "DEBUG") as logger:
+            self.client.on_message(event)
+
+        # assert the effect on logger
+        self.assertListEqual(
+            logger.output,
+            ["ERROR:dakara_base.websocket_client:Event of no type received"],
         )
 
     def test_on_error_closing(self):
@@ -366,8 +384,8 @@ class WebSocketClientTestCase(TestCase):
             ["WARNING:dakara_base.websocket_client:Unable to talk to the server"],
         )
 
-    def test_on_error_route(self):
-        """Test the callback on error when the route is invalid
+    def test_on_error_endpoint(self):
+        """Test the callback on error when the endpoint is invalid
         """
         # pre assert
         self.assertFalse(self.stop.is_set())
@@ -390,20 +408,66 @@ class WebSocketClientTestCase(TestCase):
         # call the methods
         self.client.on_error(WebSocketConnectionClosedException("error"))
 
-    def test_send(self):
-        """Test a normal use of the function
+    def test_send_no_data(self):
+        """Test to send message without data
         """
-        event = '{"data": "data"}'
-        content = {"data": "data"}
+        event = '{"type": "my_type"}'
+        message_type = "my_type"
 
         # set the websocket
         self.set_websocket()
 
         # call the method
-        self.client.send(content)
+        self.client.send(message_type)
 
         # assert the call
-        self.client.websocket.send.assert_called_with(event)
+        # we have to parse the strings, as the order in the dictionary is not
+        # guaranteed in Python < 3.6
+        self.client.websocket.send.assert_called_with(ANY)
+        _, args, _ = self.client.websocket.send.mock_calls[0]
+        event_sent = args[0]
+        self.assertEqual(json.loads(event), json.loads(event_sent))
+
+    def test_send_data_falsy(self):
+        """Test to send message with falsy data
+        """
+        event = '{"type": "my_type", "data": 0}'
+        message_type = "my_type"
+
+        # set the websocket
+        self.set_websocket()
+
+        # call the method
+        self.client.send(message_type, 0)
+
+        # assert the call
+        # we have to parse the strings, as the order in the dictionary is not
+        # guaranteed in Python < 3.6
+        self.client.websocket.send.assert_called_with(ANY)
+        _, args, _ = self.client.websocket.send.mock_calls[0]
+        event_sent = args[0]
+        self.assertEqual(json.loads(event), json.loads(event_sent))
+
+    def test_send_data(self):
+        """Test to send message with data
+        """
+        event = '{"type": "my_type", "data": [1, 2, 3]}'
+        message_type = "my_type"
+        data = [1, 2, 3]
+
+        # set the websocket
+        self.set_websocket()
+
+        # call the method
+        self.client.send(message_type, data)
+
+        # assert the call
+        # we have to parse the strings, as the order in the dictionary is not
+        # guaranteed in Python < 3.6
+        self.client.websocket.send.assert_called_with(ANY)
+        _, args, _ = self.client.websocket.send.mock_calls[0]
+        event_sent = args[0]
+        self.assertEqual(json.loads(event), json.loads(event_sent))
 
     def test_abort_connected(self):
         """Test to abort the connection
@@ -446,11 +510,11 @@ class WebSocketClientTestCase(TestCase):
         # assert the call
         self.assertFalse(self.client.retry)
 
-    @patch.object(WebSocketClient, "on_error")
-    @patch.object(WebSocketClient, "on_message")
-    @patch.object(WebSocketClient, "on_close")
-    @patch.object(WebSocketClient, "on_open")
-    @patch("dakara_base.websocket_client.WebSocketApp")
+    @patch.object(WebSocketClient, "on_error", autospec=True)
+    @patch.object(WebSocketClient, "on_message", autospec=True)
+    @patch.object(WebSocketClient, "on_close", autospec=True)
+    @patch.object(WebSocketClient, "on_open", autospec=True)
+    @patch("dakara_base.websocket_client.WebSocketApp", autospec=True)
     def test_run(
         self,
         mocked_websocket_app_class,
@@ -494,16 +558,16 @@ class WebSocketClientTestCase(TestCase):
         _, kwargs = mocked_websocket_app_class.call_args
 
         kwargs["on_open"](websocket)
-        self.client.on_open.assert_called_with()
+        self.client.on_open.assert_called_with(self.client)
 
         kwargs["on_close"](websocket, None, None)
-        self.client.on_close.assert_called_with(None, None)
+        self.client.on_close.assert_called_with(self.client, None, None)
 
         kwargs["on_message"](websocket, "message")
-        self.client.on_message.assert_called_with("message")
+        self.client.on_message.assert_called_with(self.client, "message")
 
         kwargs["on_error"](websocket, "error")
-        self.client.on_error.assert_called_with("error")
+        self.client.on_error.assert_called_with(self.client, "error")
 
         # post assert
         # in real world, this test is impossible, since the websocket object

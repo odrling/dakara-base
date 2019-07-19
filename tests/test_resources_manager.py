@@ -18,7 +18,7 @@ class ResourceListdirTestCase(TestCase):
     """Test the `resource_listdir` function
     """
 
-    @patch("dakara_base.resources_manager.resource_listdir_orig")
+    @patch("dakara_base.resources_manager.resource_listdir_orig", autospec=True)
     def test_no_dunderscore(self, mocked_resource_listdir_orig):
         """Test the function does not output entries with dunderscore
         """
@@ -39,8 +39,8 @@ class GetFileTestCase(TestCase):
     """Test the `get_file` function
     """
 
-    @patch("dakara_base.resources_manager.resource_filename")
-    @patch("dakara_base.resources_manager.resource_exists")
+    @patch("dakara_base.resources_manager.resource_filename", autospec=True)
+    @patch("dakara_base.resources_manager.resource_exists", autospec=True)
     def test_success(self, mocked_resource_exists, mocked_resource_filename):
         """Test to get a file successfuly
         """
@@ -59,7 +59,7 @@ class GetFileTestCase(TestCase):
         self.assertEqual(result, "path to resource")
 
     @patch("dakara_base.resources_manager.resource_filename")
-    @patch("dakara_base.resources_manager.resource_exists")
+    @patch("dakara_base.resources_manager.resource_exists", autospec=True)
     def test_fail(self, mocked_resource_exists, mocked_resource_filename):
         """Test to get a file that does not exist
         """
@@ -114,7 +114,7 @@ class GenerateGetResourceTestCase(TestCase):
         """
         self.assertIsNotNone(self.get_resource.__doc__)
 
-    @patch("dakara_base.resources_manager.resource_filename")
+    @patch("dakara_base.resources_manager.resource_filename", autospec=True)
     def test_sucess(self, mocked_resource_filename):
         """Test to get a resource successfuly
         """
