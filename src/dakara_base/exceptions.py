@@ -6,9 +6,9 @@ library. All exception classes should inherit from `DakaraError`:
 >>> class MyError(DakaraError):
 ...     pass
 
-This differentiates known exceptions, as opposed with unknown ones, which are
-real bugs. On program execution, a try/except structure helps to determine
-the reason of interruption of the program:
+This helps to differentiate known exceptions and unknown ones, which are real
+bugs. On program execution, a try/except structure determines the reason of
+interruption of the program:
 
 >>> import logging
 >>> debug = False

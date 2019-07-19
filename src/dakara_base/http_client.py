@@ -1,8 +1,8 @@
 """HTTP client helper module
 
-This module provides an HTTP client class, build on the requests library. The
-class is designed to be used with an API which communicates with JSON messages.
-It is pretty straightforward to use.
+This module provides the HTTP client class `HTTPClient`, built on the requests
+library. The class is designed to be used with an API which communicates with
+JSON messages.  It is pretty straightforward to use:
 
 >>> config = {
 ...     "url": "http://www.example.com",
@@ -22,7 +22,7 @@ from furl import furl
 import requests
 
 from dakara_base.exceptions import DakaraError
-from dakara_base.utils import display_message, create_url
+from dakara_base.utils import truncate_message, create_url
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def authenticated(fun):
     """Decorator that ensures the token is set
 
     It makes sure that the given function is called only if authenticated. If
-    not authenticated, calling the function will raise a NotAuthenticatedError.
+    not authenticated, calling the function will raise a `NotAuthenticatedError`.
 
     Args:
         fun (function): function to decorate.
@@ -55,7 +55,7 @@ class HTTPClient:
 
     The API must use JSON for message content.
 
-    The client uses a token credential policy only and authenticated with
+    The client uses a token credential policy only and authenticates with a
     traditional login/password mechanism.
 
     Attributes:
@@ -83,9 +83,7 @@ class HTTPClient:
 
         try:
             # url
-            self.server_url = create_url(
-                **config, path=endpoint_prefix, scheme_no_ssl="http", scheme_ssl="https"
-            )
+            self.server_url = create_url(**config, path=endpoint_prefix)
 
             # authentication
             self.token = None
@@ -112,7 +110,7 @@ class HTTPClient:
 
         Args:
             method (str): name of the HTTP method to use.
-            endpoint (str): endpoint to sent the request to. Will be added to
+            endpoint (str): endpoint to send the request to. Will be added to
                 the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
@@ -157,7 +155,7 @@ class HTTPClient:
                 "Error when communicating with the server: {}".format(error)
             ) from error
 
-        # return here if everything is the request was made without error
+        # return here if the request was made without error
         if response.ok:
             return response
 
@@ -168,7 +166,7 @@ class HTTPClient:
         # otherwise manage error generically
         logger.error(message_on_error)
         logger.debug(
-            "Error %i: %s", response.status_code, display_message(response.text)
+            "Error %i: %s", response.status_code, truncate_message(response.text)
         )
 
         raise ResponseInvalidError(
@@ -215,7 +213,7 @@ class HTTPClient:
         """Generic method to get data on server
 
         Args:
-            endpoint (str): endpoint to sent the request to. Will be added to
+            endpoint (str): endpoint to send the request to. Will be added to
                 the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
@@ -223,8 +221,7 @@ class HTTPClient:
                 successful, it will receive the response and must return an
                 exception that will be raised. If not provided, a basic error
                 management is done.
-            Extra arguments are passed to requests' get/post/put/patch/delete
-                methods.
+            Extra arguments are passed to requests' get method.
 
         Returns:
             dict: response object from the server.
@@ -240,7 +237,7 @@ class HTTPClient:
         """Generic method to post data on server
 
         Args:
-            endpoint (str): endpoint to sent the request to. Will be added to
+            endpoint (str): endpoint to send the request to. Will be added to
                 the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
@@ -248,8 +245,8 @@ class HTTPClient:
                 successful, it will receive the response and must return an
                 exception that will be raised. If not provided, a basic error
                 management is done.
-            Extra arguments are passed to requests' get/post/put/patch/delete
-                methods.
+            Extra arguments are passed to requests' post method.
+
 
         Returns:
             dict: response object from the server.
@@ -265,7 +262,7 @@ class HTTPClient:
         """Generic method to put data on server
 
         Args:
-            endpoint (str): endpoint to sent the request to. Will be added to
+            endpoint (str): endpoint to send the request to. Will be added to
                 the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
@@ -273,8 +270,7 @@ class HTTPClient:
                 successful, it will receive the response and must return an
                 exception that will be raised. If not provided, a basic error
                 management is done.
-            Extra arguments are passed to requests' get/post/put/patch/delete
-                methods.
+            Extra arguments are passed to requests' put method.
 
         Returns:
             dict: response object from the server.
@@ -290,7 +286,7 @@ class HTTPClient:
         """Generic method to patch data on server
 
         Args:
-            endpoint (str): endpoint to sent the request to. Will be added to
+            endpoint (str): endpoint to send the request to. Will be added to
                 the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
@@ -298,8 +294,7 @@ class HTTPClient:
                 successful, it will receive the response and must return an
                 exception that will be raised. If not provided, a basic error
                 management is done.
-            Extra arguments are passed to requests' get/post/put/patch/delete
-                methods.
+            Extra arguments are passed to requests' patch method.
 
         Returns:
             dict: response object from the server.
@@ -315,7 +310,7 @@ class HTTPClient:
         """Generic method to patch data on server
 
         Args:
-            endpoint (str): endpoint to sent the request to. Will be added to
+            endpoint (str): endpoint to send the request to. Will be added to
                 the end of the server URL.
             message_on_error (str): message to display in logs in case of
                 error. It should describe what the request was about.
@@ -323,8 +318,7 @@ class HTTPClient:
                 successful, it will receive the response and must return an
                 exception that will be raised. If not provided, a basic error
                 management is done.
-            Extra arguments are passed to requests' get/post/put/patch/delete
-                methods.
+            Extra arguments are passed to requests' delete method.
 
         Returns:
             dict: response object from the server.
@@ -337,7 +331,7 @@ class HTTPClient:
         return self.get_json_from_response(self.send_request("delete", *args, **kwargs))
 
     def authenticate(self):
-        """Connect to the server
+        """Authenticate with the server
 
         The authentication process relies on login/password which gives an
         authentication token. This token is stored in the instance.
@@ -359,7 +353,7 @@ class HTTPClient:
             # manage any other error
             return AuthenticationError(
                 "Unable to authenticate to the server, error {code}: {message}".format(
-                    code=response.status_code, message=display_message(response.text)
+                    code=response.status_code, message=truncate_message(response.text)
                 )
             )
 
@@ -370,7 +364,7 @@ class HTTPClient:
             "token-auth/",
             message_on_error="Unable to authenticate to the server",
             function_on_error=on_error,
-            data=data,
+            json=data,
         )
 
         # store token
@@ -382,7 +376,7 @@ class HTTPClient:
     def get_token_header(self):
         """Get the connection token as it should appear in the header
 
-        Can be called only once login has been sucessful.
+        Can be called only after a successful authentication.
 
         Returns:
             dict: formatted token.
@@ -406,7 +400,7 @@ class HTTPClient:
 
 
 class ResponseError(DakaraError):
-    """Error when communicating with the server
+    """Generic error when communicating with the server
     """
 
 

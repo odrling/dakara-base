@@ -1,17 +1,17 @@
 """WebSocket client helper module
 
-This module provides a WebSocket client class, using the websocket_client
-library. The class is designed to work with servers sending JSON messages. The
-message received from the server must be handled by custom methods,
-consequently the class cannot be used directly:
+This module provides the WebSocket client class WebSocketClient, using the
+websocket_client library. The class is designed to work with servers sending
+JSON messages. The message received from the server must be handled by custom
+methods, consequently the class cannot be used directly:
 
 >>> MyWebSocketClient(WebSocketClient):
-...     def recieve_new_song(self, data):
+...     def receive_new_song(self, data):
 ...         pass
 
 The websocket client uses a token to authenticate to the server. The token can
-be optained by the `HTTPClient` class from the `http_client` module. The client
-is a bit complex to setup:
+be optained by the `HTTPClient` class from the `http_client` module, with the
+`get_token_header` method. The client is a bit complex to setup:
 
 >>> from theading import Event
 >>> from queue import Queue
@@ -41,7 +41,7 @@ from websocket import (
 
 from dakara_base.exceptions import DakaraError
 from dakara_base.safe_workers import safe, WorkerSafeTimer
-from dakara_base.utils import display_message, create_url
+from dakara_base.utils import truncate_message, create_url
 
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,9 @@ class WebSocketClient(WorkerSafeTimer):
     It communicates with WebSocket messages of a fixed format. The message is a
     JSON string representing an object containing two keys:
         * `type` (str): the type of the message, mandatory.
-        * `data` (anything): the content of the message, optional.
+        * `data` (anything): the content of the message, optional. When sending
+            a message, the data cannot be a lone None: in this case the `data`
+            key is not present in the message.
 
     On receiving a message, the client will call the method corresponding to
     its type, which name is `receive_<type of the message here>`. The method
@@ -96,10 +98,10 @@ class WebSocketClient(WorkerSafeTimer):
         header (dict): header to add to the HTTP requests for authentication.
         websocket (websocket.WebSocketApp): WebSocket connection object.
         retry (bool): flag to retry a connection if it was lost.
-        reconnect_interval (int): interval in seconds between to reconnection
+        reconnect_interval (int): interval in seconds between two reconnection
             attempts.
-        callbacks (dict): dictionary of callbacks actions to call on receiving
-            messages.
+        callbacks (dict): dictionary of extra callback actions to call on
+            receiving messages.
         timer (threading.Timer): timer used for reconnection.
 
     Args:
@@ -165,7 +167,7 @@ class WebSocketClient(WorkerSafeTimer):
 
         If the disconnection is not due to the end of the program, consider the
         connection has been lost. In that case, a reconnection will be
-        attempted within several seconds.
+        attempted within `reconnect_interval` seconds.
 
         Args:
             code (int): error code (often None).
@@ -213,7 +215,7 @@ class WebSocketClient(WorkerSafeTimer):
         # if the message is not in JSON format, assume this is an error
         except json.JSONDecodeError:
             logger.error(
-                "Unexpected message from the server: '%s'", display_message(message)
+                "Unexpected message from the server: '%s'", truncate_message(message)
             )
             return
 
@@ -227,11 +229,11 @@ class WebSocketClient(WorkerSafeTimer):
 
         # attempt to call the corresponding method
         method_name = "receive_{}".format(message_type)
-        if not hasattr(self, method_name):
-            logger.error("Event of unknown type received '%s'", message_type)
-            return
+        try:
+            getattr(self, method_name)(event.get("data"))
 
-        getattr(self, method_name)(event.get("data"))
+        except AttributeError:
+            logger.error("Event of unknown type received '%s'", message_type)
 
     @safe
     def on_error(self, error):
@@ -312,15 +314,19 @@ class WebSocketClient(WorkerSafeTimer):
     def abort(self):
         """Request to interrupt the connection
 
-        Can be called from anywhere. It will raise an
-        WebSocketConnectionClosedException which will be passed to `on_error`.
+        Can be called from anywhere. It will raise a
+        `WebSocketConnectionClosedException` which will be passed to
+        `on_error`.
         """
         self.retry = False
 
-        # if the connection is lost, the `sock` object may not have the `abort`
-        # method
-        if self.websocket is not None and hasattr(self.websocket.sock, "abort"):
+        # if the connection is lost, the `websocket` object may not have the
+        # `abort` method
+        try:
             self.websocket.sock.abort()
+
+        except AttributeError:
+            pass
 
     def run(self):
         """Event loop

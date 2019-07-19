@@ -317,7 +317,7 @@ class HTTPClientTestCase(TestCase):
 
         # call assertions
         mocked_post.assert_called_with(
-            self.url_login, data={"username": self.login, "password": self.password}
+            self.url_login, json={"username": self.login, "password": self.password}
         )
 
         # post assertions
