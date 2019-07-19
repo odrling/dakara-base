@@ -421,7 +421,12 @@ class WebSocketClientTestCase(TestCase):
         self.client.send(message_type)
 
         # assert the call
-        self.client.websocket.send.assert_called_with(event)
+        # we have to parse the strings, as the order in the dictionary is not
+        # guaranteed in Python < 3.6
+        self.client.websocket.send.assert_called_with(ANY)
+        _, args, _ = self.client.websocket.send.mock_calls[0]
+        event_sent = args[0]
+        self.assertEqual(json.loads(event), json.loads(event_sent))
 
     def test_send_data_falsy(self):
         """Test to send message with falsy data
@@ -436,7 +441,12 @@ class WebSocketClientTestCase(TestCase):
         self.client.send(message_type, 0)
 
         # assert the call
-        self.client.websocket.send.assert_called_with(event)
+        # we have to parse the strings, as the order in the dictionary is not
+        # guaranteed in Python < 3.6
+        self.client.websocket.send.assert_called_with(ANY)
+        _, args, _ = self.client.websocket.send.mock_calls[0]
+        event_sent = args[0]
+        self.assertEqual(json.loads(event), json.loads(event_sent))
 
     def test_send_data(self):
         """Test to send message with data
@@ -452,7 +462,9 @@ class WebSocketClientTestCase(TestCase):
         self.client.send(message_type, data)
 
         # assert the call
-        # we have to parse the strings, as the order in the dictionary is not guaranteed
+        # we have to parse the strings, as the order in the dictionary is not
+        # guaranteed in Python < 3.6
+        self.client.websocket.send.assert_called_with(ANY)
         _, args, _ = self.client.websocket.send.mock_calls[0]
         event_sent = args[0]
         self.assertEqual(json.loads(event), json.loads(event_sent))
