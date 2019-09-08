@@ -408,5 +408,19 @@ class HTTPClientTestCase(TestCase):
         # call the method
         result = HTTPClient.get_json_from_response(None)
 
-        # assert the result is not None
+        # assert the result is None
+        self.assertIsNone(result)
+
+    def test_get_json_from_response_no_content(self):
+        """Test the helper to get data from a response with no content
+        """
+        # create a response with no content
+        response = MagicMock()
+        response.text = ""
+        response.json.side_effect = Exception("error")
+
+        # call the method
+        result = HTTPClient.get_json_from_response(response)
+
+        # assert the result is None
         self.assertIsNone(result)

@@ -391,9 +391,10 @@ class HTTPClient:
             response (requests.models.Response): response of a request.
 
         Returns:
-            dict: parsed response. None if no response was given.
+            dict: parsed response. None if no response was given or response
+            has no content.
         """
-        if response:
+        if response and response.text:
             return response.json()
 
         return None
