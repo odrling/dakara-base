@@ -32,6 +32,10 @@
 
 ## 1.0.1 - 2019-09-08
 
+### Fixed
+
+- Fixed a bug when dealing with a HTTP route that does not have a content.
+
 ## 1.0.0 - 2019-07-20
 
 Initial release.
