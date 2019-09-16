@@ -101,15 +101,29 @@ class CreateLoggerTestCase(TestCase):
     """Test the `create_logger` function
     """
 
+    @patch("dakara_base.progress_bar.progressbar.streams.wrap_stderr")
     @patch("dakara_base.config.coloredlogs.install", autospec=True)
-    def test(self, mocked_install):
-        """Test to call the method
+    def test_normal(self, mocked_install, mocked_wrap_stderr):
+        """Test to call the method normally
         """
         # call the method
         create_logger()
 
         # assert the call
         mocked_install.assert_called_with(fmt=LOG_FORMAT, level=LOG_LEVEL)
+        mocked_wrap_stderr.assert_not_called()
+
+    @patch("dakara_base.progress_bar.progressbar.streams.wrap_stderr")
+    @patch("dakara_base.config.coloredlogs.install", autospec=True)
+    def test_wrap(self, mocked_install, mocked_wrap_stderr):
+        """Test to call the method and request to wrap stderr
+        """
+        # call the method
+        create_logger(wrap=True)
+
+        # assert the call
+        mocked_install.assert_called_with(fmt=LOG_FORMAT, level=LOG_LEVEL)
+        mocked_wrap_stderr.assert_called_with()
 
 
 class SetLoglevelTestCase(TestCase):
