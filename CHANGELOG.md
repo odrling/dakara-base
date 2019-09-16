@@ -34,6 +34,10 @@
 
 * `progress_bar`: a collection of progress bars.
 
+### Fixed
+
+* Add `safe_workers` in the readme.
+
 ## 1.0.1 - 2019-09-08
 
 ### Fixed

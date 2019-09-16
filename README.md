@@ -15,6 +15,7 @@ This project is a collection of tools and helper modules for the Dakara Project.
 * `http_client`: an HTTP client dedicated to be used with an API;
 * `progress_bar`: a collection of progress bars;
 * `resources_manager`: a helper for retreiving static files with module-like naming;
+* `safe_workers`: a library to facilitate the manipulation of threads;
 * `utils`: other various helpers;
 * `websocket_client`: a Websocket client.
 
