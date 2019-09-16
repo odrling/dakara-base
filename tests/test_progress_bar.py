@@ -169,12 +169,12 @@ class WrapStderrForLoggingTestCase(TestCase):
     """Test the wrapper for stderr
     """
 
-    @patch("dakara_base.progress_bar.wrap_stderr_for_logging")
-    def test_wrap(self, mocked_wrap_stderr_for_logging):
+    @patch("dakara_base.progress_bar.progressbar.streams.wrap_stderr")
+    def test_wrap(self, mocked_wrap_stderr):
         """Test to call the function
         """
         # call the function
         progress_bar.wrap_stderr_for_logging()
 
         # assert the call
-        mocked_wrap_stderr_for_logging.assert_called_with()
+        mocked_wrap_stderr.assert_called_with()
