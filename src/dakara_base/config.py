@@ -16,12 +16,16 @@ latter one:
 >>> from path import Path
 >>> config = load_config(Path("path/to/file.yaml"), debug=True)
 >>> set_loglevel(config)
+
+If you use progress bar and logging at the same time, you should call
+`create_logger` with `wrap=True`.
 """
 
 
 import logging
 
 import coloredlogs
+import progressbar
 import yaml
 
 from dakara_base.exceptions import DakaraError
@@ -81,9 +85,19 @@ def load_config(config_path, debug, mandatory_keys=None):
     return config
 
 
-def create_logger():
+def create_logger(wrap=False):
     """Create logger
+
+    Args:
+        wrap (bool): If True, wrap the standard error stream for using logging
+            and progress bar. You have to enable this flag if you use
+            `progress_bar`.
     """
+    # wrap stderr on demand
+    if wrap:
+        progressbar.streams.wrap_stderr()
+
+    # setup loggers
     coloredlogs.install(fmt=LOG_FORMAT, level=LOG_LEVEL)
 
 

@@ -1,7 +1,7 @@
 import logging
 from io import StringIO
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from dakara_base import progress_bar
 
@@ -163,18 +163,3 @@ class NullBarTestCase(TestCase):
                 "INFO:dakara_base.progress_bar:end bar",
             ],
         )
-
-
-class WrapStderrForLoggingTestCase(TestCase):
-    """Test the wrapper for stderr
-    """
-
-    @patch("dakara_base.progress_bar.progressbar.streams.wrap_stderr")
-    def test_wrap(self, mocked_wrap_stderr):
-        """Test to call the function
-        """
-        # call the function
-        progress_bar.wrap_stderr_for_logging()
-
-        # assert the call
-        mocked_wrap_stderr.assert_called_with()

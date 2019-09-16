@@ -2,6 +2,9 @@
 
 This module regroups utilities for managing a progress bar.
 
+If you use progress bar and logging at the same time, you should call
+`dakara_base.config.create_logger` with `wrap=True`.
+
 Two different bars are provided in the module.
 
 The `progress_bar` is a progress bar that can display a descriptive text to
@@ -22,10 +25,6 @@ to not pollute the log file.
 ...     pass
 
 The text is displayed as a log entry.
-
-The `wrap_stderr_for_logging` function is a simple call to progressbar2
-internals that wrap the stdandard error stream to use logging. It must be
-called before `dakara_base.config.create_logger`.
 """
 
 
@@ -109,9 +108,3 @@ def null_bar(*args, text=None, **kwargs):
     # create null progress bar
     bar = progressbar.NullBar()
     return bar(*args, **kwargs)
-
-
-def wrap_stderr_for_logging():
-    """Wrap the standard error stream for using logging and progress bar
-    """
-    progressbar.streams.wrap_stderr()
