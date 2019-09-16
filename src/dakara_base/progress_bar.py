@@ -1,3 +1,34 @@
+"""Progress bar module
+
+This module regroups utilities for managing a progress bar.
+
+Two different bars are provided in the module.
+
+The `progress_bar` is a progress bar that can display a descriptive text to
+inform which task is going on:
+
+>>> items = ["one", "two", "three"]
+>>> for item in progress_bar(items, text="brief description of the task"):
+...     pass
+
+The text adapts to the screen width using the `ShrinkableTextWidget` widget.
+
+The `null_bar` is a pseudo progress bar that does not display progress. It was
+initialy designed to be used on logs with the same interface as a bar, in order
+to not pollute the log file.
+
+>>> items = ["one", "two", "three"]
+>>> for item in null_bar(items, text="brief description of the task"):
+...     pass
+
+The text is displayed as a log entry.
+
+The `wrap_stderr_for_logging` function is a simple call to progressbar2
+internals that wrap the stdandard error stream to use logging. It must be
+called before `dakara_base.config.create_logger`.
+"""
+
+
 import logging
 
 import progressbar
