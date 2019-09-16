@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.1.0 - 2019-09-16
+
 ### Added
 
 * `progress_bar`: a collection of progress bars.
