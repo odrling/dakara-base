@@ -28,7 +28,7 @@ dev_version_number=$2-dev
 version_date=$(date -I -u)
 
 # patch version file
-version_file=src/dakara_base/version.py
+version_file=src/dakara_base/__init__.py
 cat <<EOF >$version_file
 # this file is automatically updated by bump_version.sh, do not edit it!
 __version__ = "$version_number"
