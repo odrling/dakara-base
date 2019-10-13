@@ -227,7 +227,9 @@ class CreateConfigFileTestCase(TestCase):
             Path("/path/to/directory/config.yaml").normpath()
         )
         mocked_print.assert_called_with(
-            "Config created in /path/to/directory/config.yaml"
+            "Config created in {}".format(
+                Path("/path/to/directory/config.yaml").normpath()
+            )
         )
 
     @patch("dakara_base.config.input")
@@ -254,7 +256,9 @@ class CreateConfigFileTestCase(TestCase):
         mocked_copyfile.assert_not_called()
         mocked_print.assert_not_called()
         mocked_input.assert_called_with(
-            "/path/to/directory/config.yaml already exists, overwrite? [y/N] "
+            "{} already exists, overwrite? [y/N] ".format(
+                Path("/path/to/directory/config.yaml").normpath()
+            )
         )
 
     @patch("dakara_base.config.input")
