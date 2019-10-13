@@ -11,8 +11,9 @@ The `progress_bar` is a progress bar that can display a descriptive text to
 inform which task is going on:
 
 >>> items = ["one", "two", "three"]
->>> for item in progress_bar(items, text="brief description of the task"):
-...     pass
+>>> with progress_bar(items, text="brief description of the task") as progress_items:
+...     for item in progress_items:
+...         pass
 
 The text adapts to the screen width using the `ShrinkableTextWidget` widget.
 
@@ -21,14 +22,16 @@ initialy designed to be used on logs with the same interface as a bar, in order
 to not pollute the log file.
 
 >>> items = ["one", "two", "three"]
->>> for item in null_bar(items, text="brief description of the task"):
-...     pass
+>>> with null_bar(items, text="brief description of the task") as progress_items:
+...     for item in progress_items:
+...         pass
 
 The text is displayed as a log entry.
 """
 
 
 import logging
+from contextlib import contextmanager
 
 import progressbar
 from progressbar.widgets import WidgetBase
@@ -66,6 +69,7 @@ class ShrinkableTextWidget(WidgetBase):
         return text.ljust(width)
 
 
+@contextmanager
 def progress_bar(*args, text=None, **kwargs):
     """Gives the default un-muted progress bar for the project
 
@@ -87,9 +91,16 @@ def progress_bar(*args, text=None, **kwargs):
     widgets.extend([progressbar.Timer(), progressbar.Bar(), progressbar.ETA()])
 
     # create progress bar
-    return progressbar.progressbar(*args, widgets=widgets, **kwargs)
+    try:
+        yield progressbar.progressbar(*args, widgets=widgets, **kwargs)
+
+    finally:
+        # stop capturing stderr no matter what
+        # see #15
+        progressbar.streams.stop_capturing()
 
 
+@contextmanager
 def null_bar(*args, text=None, **kwargs):
     """Gives the defaylt muted progress bar for the project
 
@@ -107,4 +118,8 @@ def null_bar(*args, text=None, **kwargs):
 
     # create null progress bar
     bar = progressbar.NullBar()
-    return bar(*args, **kwargs)
+    try:
+        yield bar(*args, **kwargs)
+
+    finally:
+        pass

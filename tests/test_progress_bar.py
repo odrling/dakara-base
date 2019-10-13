@@ -1,7 +1,10 @@
 import logging
+import sys
 from io import StringIO
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+import progressbar
 
 from dakara_base import progress_bar
 
@@ -77,10 +80,11 @@ class ProgressBarTestCase(TestCase):
         """
         # call the bar
         with StringIO() as file:
-            for _ in progress_bar.progress_bar(
+            with progress_bar.progress_bar(
                 range(1), fd=file, term_width=65, text="some text here"
-            ):
-                pass
+            ) as progress:
+                for _ in progress:
+                    pass
 
             lines = self.get_lines(file)
 
@@ -99,8 +103,11 @@ class ProgressBarTestCase(TestCase):
         """
         # call the bar
         with StringIO() as file:
-            for _ in progress_bar.progress_bar(range(1), fd=file, term_width=65):
-                pass
+            with progress_bar.progress_bar(
+                range(1), fd=file, term_width=65
+            ) as progress:
+                for _ in progress:
+                    pass
 
             lines = self.get_lines(file)
 
@@ -113,6 +120,83 @@ class ProgressBarTestCase(TestCase):
                 "Elapsed Time: 0:00:00|############################|Time:  0:00:00",
             ],
         )
+
+    def test_stderr_on_no_exception(self):
+        """Test to check stderr is not captured if no exceptions occur
+        """
+        initial_stderr = sys.stderr
+        stderr = StringIO()
+
+        with patch("progressbar.streams.original_stderr", stderr):
+            try:
+                # wrap stderr
+                progressbar.streams.wrap_stderr()
+                wrapped_stderr = sys.stderr
+
+                # execute the progressbar without exception
+                with StringIO() as file:
+                    with progress_bar.progress_bar(
+                        range(1), fd=file, term_width=65
+                    ) as progress:
+                        for _ in progress:
+                            pass
+
+                sys.stderr.write("error")
+                after_stderr = sys.stderr
+
+            finally:
+                # unwrap stderr
+                progressbar.streams.unwrap_stderr()
+                sys.stderr = initial_stderr
+
+        final_stderr = sys.stderr
+
+        # assert stderrs
+        self.assertIs(initial_stderr, final_stderr)
+        self.assertIs(wrapped_stderr, after_stderr)
+        self.assertIsNot(initial_stderr, wrapped_stderr)
+
+        # assert stderr value
+        value = stderr.getvalue()
+        self.assertEqual(value, "error")
+
+    def test_no_stderr_on_exception(self):
+        """Test to check stderr does not remain captured after an exception
+        """
+
+        class MyException(Exception):
+            pass
+
+        initial_stderr = sys.stderr
+        stderr = StringIO()
+
+        with patch("progressbar.streams.original_stderr", stderr):
+            try:
+                # wrap stderr
+                progressbar.streams.wrap_stderr()
+
+                # execute the progressbar with an exception
+                with StringIO() as file:
+                    try:
+                        with progress_bar.progress_bar(
+                            range(1), fd=file, term_width=65
+                        ) as progress:
+                            for _ in progress:
+                                raise MyException("error")
+
+                    except MyException:
+                        pass
+
+                sys.stderr.write("error")
+
+            finally:
+                # unwrap stderr
+                progressbar.streams.unwrap_stderr()
+                sys.stderr = initial_stderr
+
+        # assert stderr value
+        value = stderr.getvalue()
+        self.assertEqual(value, "error")
 
 
 class NullBarTestCase(TestCase):
@@ -129,8 +213,9 @@ class NullBarTestCase(TestCase):
         # call the bar
         with self.assertLogs("dakara_base.progress_bar") as logger:
             self.logger.info("start bar")
-            for _ in progress_bar.null_bar(range(1), text="some text here"):
-                pass
+            with progress_bar.null_bar(range(1), text="some text here") as progress:
+                for _ in progress:
+                    pass
 
             self.logger.info("end bar")
 
@@ -150,8 +235,9 @@ class NullBarTestCase(TestCase):
         # call the bar
         with self.assertLogs("dakara_base.progress_bar") as logger:
             self.logger.info("start bar")
-            for _ in progress_bar.null_bar(range(1)):
-                pass
+            with progress_bar.null_bar(range(1)) as progress:
+                for _ in progress:
+                    pass
 
             self.logger.info("end bar")
 
