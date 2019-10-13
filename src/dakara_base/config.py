@@ -19,16 +19,32 @@ latter one:
 
 If you use progress bar and logging at the same time, you should call
 `create_logger` with `wrap=True`.
+
+The wodule has three functions to manage Dakara Project config files. First,
+`get_config_directory` gives the configuration directory according to the
+operating system. `get_config_file` gives the complete path to the config file
+in the configuration directory:
+
+>>> config_path = get_config_file("my_config.yaml")
+
+Then, `create_config` copies a given config file stored in module resources to
+the configuration directory:
+
+>>> create_config("module.resources", "my_config.yaml")
 """
 
 
 import logging
+import sys
+from distutils.util import strtobool
 
 import coloredlogs
 import progressbar
 import yaml
+from path import Path
 
 from dakara_base.exceptions import DakaraError
+from dakara_base.resources_manager import get_file
 
 
 LOG_FORMAT = "[%(asctime)s] %(name)s %(levelname)s %(message)s"
@@ -109,6 +125,73 @@ def set_loglevel(config):
     """
     loglevel = config.get("loglevel", LOG_LEVEL)
     coloredlogs.set_level(loglevel)
+
+
+def get_config_directory():
+    """Returns the Dakara config directory to use for the current OS
+
+    Returns:
+        path.Path: path of the Dakara config directory. Value is not expanded,
+        so you have to call `.expand()` on the return value.
+    """
+    if "linux" in sys.platform:
+        return Path("~") / ".config" / "dakara"
+
+    if "win" in sys.platform:
+        return Path("$APPDATA") / "Dakara"
+
+    raise NotImplementedError(
+        "This operating system ({}) is not currently supported".format(sys.platform)
+    )
+
+
+def create_config_file(resource, filename, force=False):
+    """Create a new config file in user directory
+
+    Args:
+        resource (str): resource where to find the config file.
+        filename (str): name of the config file.
+        force (bool): if True, config file in user directory is overwritten if
+            it existed already. Otherwise, prompt the user.
+    """
+    # get the file
+    origin = get_file(resource, filename)
+    destination = get_config_file(filename)
+
+    # create directory
+    destination.dirname().mkdir_p()
+
+    # check destination does not exist
+    if not force and destination.exists():
+        try:
+            result = strtobool(
+                input("{} already exists, overwrite? [y/N] ".format(destination))
+            )
+
+        except ValueError:
+            result = False
+
+        if not result:
+            return
+
+    # copy file
+    origin.copyfile(destination)
+    print("Config created in {}".format(destination))
+
+
+def get_config_file(filename):
+    """Get path of the config in user directory
+
+    It does not check if the file exists.
+
+    Args:
+        filename (str): name of the config file.
+
+    Returns:
+        path.Path: path to the config file.
+    """
+    directory = get_config_directory().expand()
+    return directory / filename
 
 
 class ConfigError(DakaraError):

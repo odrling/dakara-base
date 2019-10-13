@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Added
+
+- Access to and create user-level stored Dakara config files with `dakara_base.config.get_config_file` and `dakara_base.config.create_config_file`.
+
 ## 1.1.0 - 2019-09-16
 
 ### Added
