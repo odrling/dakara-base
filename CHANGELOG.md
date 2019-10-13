@@ -30,6 +30,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- `progress_bar`: the different progress bars have to be used as context managers (and not directly as iterators).
+  See module help for examples.
+  This fixes a bug when an exception raised within a progress bar would prevent to stop the stderr capture.
+
 ## 1.1.0 - 2019-09-16
 
 ### Added
