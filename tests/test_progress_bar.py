@@ -1,5 +1,6 @@
 import logging
 import sys
+from contextlib import contextmanager
 from io import StringIO
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
@@ -124,30 +125,27 @@ class ProgressBarTestCase(TestCase):
     def test_stderr_on_no_exception(self):
         """Test to check stderr is not captured if no exceptions occur
         """
-        initial_stderr = sys.stderr
         stderr = StringIO()
+        initial_stderr = sys.stderr
 
-        with patch("progressbar.streams.original_stderr", stderr):
-            try:
-                # wrap stderr
-                progressbar.streams.wrap_stderr()
-                wrapped_stderr = sys.stderr
+        # we patch `sys.stderr` as it is risky to work directly on it, and we
+        # patch `progressbar.streams.original_stderr` as it is defined at
+        # module loading
+        with patch("sys.stderr", stderr), patch(
+            "progressbar.streams.original_stderr", stderr
+        ), wrap_stderr_progressbar():
+            wrapped_stderr = sys.stderr
 
-                # execute the progressbar without exception
-                with StringIO() as file:
-                    with progress_bar.progress_bar(
-                        range(1), fd=file, term_width=65
-                    ) as progress:
-                        for _ in progress:
-                            pass
+            # execute the progressbar without exception
+            with StringIO() as file:
+                with progress_bar.progress_bar(
+                    range(1), fd=file, term_width=65
+                ) as progress:
+                    for _ in progress:
+                        pass
 
-                sys.stderr.write("error")
-                after_stderr = sys.stderr
-
-            finally:
-                # unwrap stderr
-                progressbar.streams.unwrap_stderr()
-                sys.stderr = initial_stderr
+            sys.stderr.write("error")
+            after_stderr = sys.stderr
 
         final_stderr = sys.stderr
 
@@ -155,6 +153,8 @@ class ProgressBarTestCase(TestCase):
         self.assertIs(initial_stderr, final_stderr)
         self.assertIs(wrapped_stderr, after_stderr)
         self.assertIsNot(initial_stderr, wrapped_stderr)
+        self.assertIsNot(stderr, wrapped_stderr)
+        self.assertIsNot(stderr, initial_stderr)
 
         # assert stderr value
         value = stderr.getvalue()
@@ -162,41 +162,62 @@ class ProgressBarTestCase(TestCase):
 
     def test_no_stderr_on_exception(self):
         """Test to check stderr does not remain captured after an exception
+
+        When leaving a progress bar by an exception, it does not call
+        `progressbar.streams.stop_capturing` and the stderr is allways
+        captured.
         """
 
         class MyException(Exception):
             pass
 
-        initial_stderr = sys.stderr
         stderr = StringIO()
+        initial_stderr = sys.stderr
 
-        with patch("progressbar.streams.original_stderr", stderr):
-            try:
-                # wrap stderr
-                progressbar.streams.wrap_stderr()
+        with patch("sys.stderr", stderr), patch(
+            "progressbar.streams.original_stderr", stderr
+        ), wrap_stderr_progressbar():
+            wrapped_stderr = sys.stderr
 
-                # execute the progressbar with an exception
-                with StringIO() as file:
-                    try:
-                        with progress_bar.progress_bar(
-                            range(1), fd=file, term_width=65
-                        ) as progress:
-                            for _ in progress:
-                                raise MyException("error")
+            # execute the progressbar with an exception
+            with StringIO() as file:
+                try:
+                    with progress_bar.progress_bar(
+                        range(1), fd=file, term_width=65
+                    ) as progress:
+                        for _ in progress:
+                            raise MyException("error")
 
-                    except MyException:
-                        pass
+                except MyException:
+                    pass
 
-                sys.stderr.write("error")
+            sys.stderr.write("error")
+            after_stderr = sys.stderr
 
-            finally:
-                # unwrap stderr
-                progressbar.streams.unwrap_stderr()
-                sys.stderr = initial_stderr
+        final_stderr = sys.stderr
+
+        # assert stderrs
+        self.assertIs(initial_stderr, final_stderr)
+        self.assertIs(wrapped_stderr, after_stderr)
+        self.assertIsNot(initial_stderr, wrapped_stderr)
+        self.assertIsNot(stderr, wrapped_stderr)
+        self.assertIsNot(stderr, initial_stderr)
 
         # assert stderr value
         value = stderr.getvalue()
         self.assertEqual(value, "error")
+
+
+@contextmanager
+def wrap_stderr_progressbar():
+    """Temporary wrap stderr with progressbar tools
+    """
+    try:
+        progressbar.streams.wrap_stderr()
+        yield None
+
+    finally:
+        progressbar.streams.unwrap_stderr()
 
 
 class NullBarTestCase(TestCase):
