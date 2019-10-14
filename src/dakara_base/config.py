@@ -20,10 +20,10 @@ latter one:
 If you use progress bar and logging at the same time, you should call
 `create_logger` with `wrap=True`.
 
-The wodule has three functions to manage Dakara Project config files. First,
+The module has three functions to manage Dakara Project config files. First,
 `get_config_directory` gives the configuration directory according to the
-operating system. `get_config_file` gives the complete path to the config file
-in the configuration directory:
+operating system. Next, `get_config_file` gives the complete path to the config
+file in the configuration directory:
 
 >>> config_path = get_config_file("my_config.yaml")
 
