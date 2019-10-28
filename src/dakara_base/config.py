@@ -85,20 +85,24 @@ def load_config(config_path, debug, mandatory_keys=None):
     return config
 
 
-def create_logger(wrap=False):
+def create_logger(wrap=False, custom_log_format=None, custom_log_level=None):
     """Create logger
 
     Args:
-        wrap (bool): If True, wrap the standard error stream for using logging
+        wrap (bool): if True, wrap the standard error stream for using logging
             and progress bar. You have to enable this flag if you use
             `progress_bar`.
+        custom_log_format (str): custom format string to use for logs.
+        custom_log_level (str): custom level of logging.
     """
     # wrap stderr on demand
     if wrap:
         progressbar.streams.wrap_stderr()
 
     # setup loggers
-    coloredlogs.install(fmt=LOG_FORMAT, level=LOG_LEVEL)
+    log_format = custom_log_format or LOG_FORMAT
+    log_level = custom_log_level or LOG_LEVEL
+    coloredlogs.install(fmt=log_format, level=log_level)
 
 
 def set_loglevel(config):

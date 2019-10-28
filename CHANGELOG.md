@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Added
+
+- You can now specify custom log format and log level in `dakara_base.config.create_logger` with arguments `custom_log_format` and `custom_log_level`.
+
 ## 1.1.0 - 2019-09-16
 
 ### Added
