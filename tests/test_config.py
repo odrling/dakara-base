@@ -164,7 +164,7 @@ class GetConfigDirectoryTestCase(TestCase):
         """
         directory = get_config_directory()
 
-        self.assertEqual(directory, Path("~/.config/dakara").normpath())
+        self.assertEqual(directory, Path("~") / ".config" / "dakara")
 
     @patch("sys.platform", "win32")
     def test_windows(self):
@@ -172,7 +172,7 @@ class GetConfigDirectoryTestCase(TestCase):
         """
         directory = get_config_directory()
 
-        self.assertEqual(directory, Path("$APPDATA/Dakara").normpath())
+        self.assertEqual(directory, Path("$APPDATA") / "Dakara")
 
     @patch("sys.platform", "unknown")
     def test_unknown(self):
@@ -194,9 +194,9 @@ class GetConfigDirectoryTestCase(TestCase):
 @patch.object(Path, "mkdir_p")
 @patch(
     "dakara_base.config.get_config_file",
-    return_value=Path("/path/to/directory/config.yaml").normpath(),
+    return_value=Path("/") / "path" / "to" / "directory" / "config.yaml",
 )
-@patch("dakara_base.config.get_file", return_value=Path("/path/to/file").normpath())
+@patch("dakara_base.config.get_file", return_value=Path("/") / "path" / "to" / "file")
 class CreateConfigFileTestCase(TestCase):
     """Test the config file creator
     """
@@ -224,11 +224,11 @@ class CreateConfigFileTestCase(TestCase):
         mocked_mkdir_p.assert_called_with()
         mocked_exists.assert_called_with()
         mocked_copyfile.assert_called_with(
-            Path("/path/to/directory/config.yaml").normpath()
+            Path("/") / "path" / "to" / "directory" / "config.yaml"
         )
         mocked_print.assert_called_with(
             "Config created in {}".format(
-                Path("/path/to/directory/config.yaml").normpath()
+                Path("/") / "path" / "to" / "directory" / "config.yaml"
             )
         )
 
@@ -257,7 +257,7 @@ class CreateConfigFileTestCase(TestCase):
         mocked_print.assert_not_called()
         mocked_input.assert_called_with(
             "{} already exists, overwrite? [y/N] ".format(
-                Path("/path/to/directory/config.yaml").normpath()
+                Path("/") / "path" / "to" / "directory" / "config.yaml"
             )
         )
 
@@ -305,13 +305,13 @@ class CreateConfigFileTestCase(TestCase):
         mocked_exists.assert_not_called()
         mocked_input.assert_not_called()
         mocked_copyfile.assert_called_with(
-            Path("/path/to/directory/config.yaml").normpath()
+            Path("/") / "path" / "to" / "directory" / "config.yaml"
         )
 
 
 @patch(
     "dakara_base.config.get_config_directory",
-    return_value=Path("/path/to/directory").normpath(),
+    return_value=Path("/") / "path" / "to" / "directory",
 )
 class GetConfigFileTestCase(TestCase):
     """Test the config file getter
@@ -321,4 +321,6 @@ class GetConfigFileTestCase(TestCase):
         """Test to get config file
         """
         result = get_config_file("config.yaml")
-        self.assertEqual(result, Path("/path/to/directory/config.yaml").normpath())
+        self.assertEqual(
+            result, Path("/") / "path" / "to" / "directory" / "config.yaml"
+        )
