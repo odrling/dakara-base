@@ -6,8 +6,6 @@ from yaml.parser import ParserError
 
 from dakara_base.config import (
     load_config,
-    LOG_FORMAT,
-    LOG_LEVEL,
     ConfigInvalidError,
     ConfigNotFoundError,
     ConfigParseError,
@@ -100,6 +98,8 @@ class LoadConfigTestCase(TestCase):
         )
 
 
+@patch("dakara_base.config.LOG_FORMAT", "my format")
+@patch("dakara_base.config.LOG_LEVEL", "my level")
 class CreateLoggerTestCase(TestCase):
     """Test the `create_logger` function
     """
@@ -113,7 +113,7 @@ class CreateLoggerTestCase(TestCase):
         create_logger()
 
         # assert the call
-        mocked_install.assert_called_with(fmt=LOG_FORMAT, level=LOG_LEVEL)
+        mocked_install.assert_called_with(fmt="my format", level="my level")
         mocked_wrap_stderr.assert_not_called()
 
     @patch("dakara_base.progress_bar.progressbar.streams.wrap_stderr")
@@ -125,8 +125,24 @@ class CreateLoggerTestCase(TestCase):
         create_logger(wrap=True)
 
         # assert the call
-        mocked_install.assert_called_with(fmt=LOG_FORMAT, level=LOG_LEVEL)
+        mocked_install.assert_called_with(fmt="my format", level="my level")
         mocked_wrap_stderr.assert_called_with()
+
+    @patch("dakara_base.progress_bar.progressbar.streams.wrap_stderr")
+    @patch("dakara_base.config.coloredlogs.install", autospec=True)
+    def test_custom(self, mocked_install, mocked_wrap_stderr):
+        """Test to call the method with custom format and level
+        """
+        # call the method
+        create_logger(
+            custom_log_format="my custom format", custom_log_level="my custom level"
+        )
+
+        # assert the call
+        mocked_install.assert_called_with(
+            fmt="my custom format", level="my custom level"
+        )
+        mocked_wrap_stderr.assert_not_called()
 
 
 class SetLoglevelTestCase(TestCase):

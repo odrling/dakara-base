@@ -32,6 +32,7 @@
 
 ### Added
 
+- You can now specify custom log format and log level in `dakara_base.config.create_logger` with arguments `custom_log_format` and `custom_log_level`.
 - Access to and create user-level stored Dakara config files with `dakara_base.config.get_config_file` and `dakara_base.config.create_config_file`.
 
 ## 1.1.0 - 2019-09-16
