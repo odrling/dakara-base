@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Added
+
+- You can now specify custom log format and log level in `dakara_base.config.create_logger` with arguments `custom_log_format` and `custom_log_level`.
+
 ### Fixed
 
 - `progress_bar`: the different progress bars have to be used as context managers (and not directly as iterators).
