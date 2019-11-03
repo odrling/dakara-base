@@ -9,7 +9,10 @@ from dakara_base.config import (
     ConfigInvalidError,
     ConfigNotFoundError,
     ConfigParseError,
+    create_config_file,
     create_logger,
+    get_config_directory,
+    get_config_file,
     set_loglevel,
 )
 from dakara_base.resources_manager import get_file
@@ -165,3 +168,178 @@ class SetLoglevelTestCase(TestCase):
 
         # assert the result
         mocked_set_level.assert_called_with("INFO")
+
+
+class GetConfigDirectoryTestCase(TestCase):
+    """Test the config directory getter
+    """
+
+    @patch("sys.platform", "linux")
+    def test_linux(self):
+        """Test to get config directory for Linux
+        """
+        directory = get_config_directory()
+
+        self.assertEqual(directory, Path("~") / ".config" / "dakara")
+
+    @patch("sys.platform", "win32")
+    def test_windows(self):
+        """Test to get config directory for Windows
+        """
+        directory = get_config_directory()
+
+        self.assertEqual(directory, Path("$APPDATA") / "Dakara")
+
+    @patch("sys.platform", "unknown")
+    def test_unknown(self):
+        """Test to get config directory for unknown OS
+        """
+        with self.assertRaises(NotImplementedError) as error:
+            get_config_directory()
+
+        # assert the error
+        self.assertEqual(
+            str(error.exception),
+            "This operating system (unknown) is not currently supported",
+        )
+
+
+@patch("dakara_base.config.print")
+@patch.object(Path, "copyfile")
+@patch.object(Path, "exists")
+@patch.object(Path, "mkdir_p")
+@patch(
+    "dakara_base.config.get_config_file",
+    return_value=Path("/").normpath() / "path" / "to" / "directory" / "config.yaml",
+)
+@patch(
+    "dakara_base.config.get_file",
+    return_value=Path("/").normpath() / "path" / "to" / "file",
+)
+class CreateConfigFileTestCase(TestCase):
+    """Test the config file creator
+    """
+
+    def test_create_empty(
+        self,
+        mocked_get_file,
+        mocked_get_config_file,
+        mocked_mkdir_p,
+        mocked_exists,
+        mocked_copyfile,
+        mocked_print,
+    ):
+        """Test to create the config file in an empty directory
+        """
+        # setup mocks
+        mocked_exists.return_value = False
+
+        # call the function
+        create_config_file("module.resources", "config.yaml")
+
+        # assert the call
+        mocked_get_file.assert_called_with("module.resources", "config.yaml")
+        mocked_get_config_file.assert_called_with("config.yaml")
+        mocked_mkdir_p.assert_called_with()
+        mocked_exists.assert_called_with()
+        mocked_copyfile.assert_called_with(
+            Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+        )
+        mocked_print.assert_called_with(
+            "Config created in {}".format(
+                Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+            )
+        )
+
+    @patch("dakara_base.config.input")
+    def test_create_existing_no(
+        self,
+        mocked_input,
+        mocked_get_file,
+        mocked_get_config_file,
+        mocked_mkdir_p,
+        mocked_exists,
+        mocked_copyfile,
+        mocked_print,
+    ):
+        """Test to create the config file in a non empty directory
+        """
+        # setup mocks
+        mocked_exists.return_value = True
+        mocked_input.return_value = "no"
+
+        # call the function
+        create_config_file("module.resources", "config.yaml")
+
+        # assert the call
+        mocked_copyfile.assert_not_called()
+        mocked_print.assert_not_called()
+        mocked_input.assert_called_with(
+            "{} already exists, overwrite? [y/N] ".format(
+                Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+            )
+        )
+
+    @patch("dakara_base.config.input")
+    def test_create_existing_invalid_input(
+        self,
+        mocked_input,
+        mocked_get_file,
+        mocked_get_config_file,
+        mocked_mkdir_p,
+        mocked_exists,
+        mocked_copyfile,
+        mocked_print,
+    ):
+        """Test to create the config file in a non empty directory with invalid input
+        """
+        # setup mocks
+        mocked_exists.return_value = True
+        mocked_input.return_value = ""
+
+        # call the function
+        create_config_file("module.resources", "config.yaml")
+
+        # assert the call
+        mocked_copyfile.assert_not_called()
+        mocked_print.assert_not_called()
+
+    @patch("dakara_base.config.input")
+    def test_create_existing_force(
+        self,
+        mocked_input,
+        mocked_get_file,
+        mocked_get_config_file,
+        mocked_mkdir_p,
+        mocked_exists,
+        mocked_copyfile,
+        mocked_print,
+    ):
+        """Test to create the config file in a non empty directory with force overwrite
+        """
+        # call the function
+        create_config_file("module.resources", "config.yaml", force=True)
+
+        # assert the call
+        mocked_exists.assert_not_called()
+        mocked_input.assert_not_called()
+        mocked_copyfile.assert_called_with(
+            Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+        )
+
+
+@patch(
+    "dakara_base.config.get_config_directory",
+    return_value=Path("/").normpath() / "path" / "to" / "directory",
+)
+class GetConfigFileTestCase(TestCase):
+    """Test the config file getter
+    """
+
+    def test_get(self, mocked_get_config_directory):
+        """Test to get config file
+        """
+        result = get_config_file("config.yaml")
+        self.assertEqual(
+            result, Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+        )
