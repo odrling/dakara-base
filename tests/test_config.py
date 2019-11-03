@@ -194,9 +194,12 @@ class GetConfigDirectoryTestCase(TestCase):
 @patch.object(Path, "mkdir_p")
 @patch(
     "dakara_base.config.get_config_file",
-    return_value=Path("/") / "path" / "to" / "directory" / "config.yaml",
+    return_value=Path("/").normpath() / "path" / "to" / "directory" / "config.yaml",
 )
-@patch("dakara_base.config.get_file", return_value=Path("/") / "path" / "to" / "file")
+@patch(
+    "dakara_base.config.get_file",
+    return_value=Path("/").normpath() / "path" / "to" / "file",
+)
 class CreateConfigFileTestCase(TestCase):
     """Test the config file creator
     """
@@ -224,11 +227,11 @@ class CreateConfigFileTestCase(TestCase):
         mocked_mkdir_p.assert_called_with()
         mocked_exists.assert_called_with()
         mocked_copyfile.assert_called_with(
-            Path("/") / "path" / "to" / "directory" / "config.yaml"
+            Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
         )
         mocked_print.assert_called_with(
             "Config created in {}".format(
-                Path("/") / "path" / "to" / "directory" / "config.yaml"
+                Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
             )
         )
 
@@ -257,7 +260,7 @@ class CreateConfigFileTestCase(TestCase):
         mocked_print.assert_not_called()
         mocked_input.assert_called_with(
             "{} already exists, overwrite? [y/N] ".format(
-                Path("/") / "path" / "to" / "directory" / "config.yaml"
+                Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
             )
         )
 
@@ -305,13 +308,13 @@ class CreateConfigFileTestCase(TestCase):
         mocked_exists.assert_not_called()
         mocked_input.assert_not_called()
         mocked_copyfile.assert_called_with(
-            Path("/") / "path" / "to" / "directory" / "config.yaml"
+            Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
         )
 
 
 @patch(
     "dakara_base.config.get_config_directory",
-    return_value=Path("/") / "path" / "to" / "directory",
+    return_value=Path("/").normpath() / "path" / "to" / "directory",
 )
 class GetConfigFileTestCase(TestCase):
     """Test the config file getter
@@ -322,5 +325,5 @@ class GetConfigFileTestCase(TestCase):
         """
         result = get_config_file("config.yaml")
         self.assertEqual(
-            result, Path("/") / "path" / "to" / "directory" / "config.yaml"
+            result, Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
         )
