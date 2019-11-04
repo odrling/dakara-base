@@ -74,6 +74,7 @@ def progress_bar(iterator, *args, text=None, **kwargs):
     It prints an optionnal shrinkable text, a timer, a progress bar and an ETA.
 
     Args:
+        iterator (iterator): iterator of items to use the bar with.
         text (str): text to display describing the current operation.
 
     Returns:
@@ -107,6 +108,7 @@ def null_bar(iterator, *args, text=None, **kwargs):
     It only logs the optionnal text.
 
     Args:
+        iterator (iterator): iterator of items to use the bar with.
         text (str): text to log describing the current operation.
 
     Returns:
