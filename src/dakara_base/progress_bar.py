@@ -86,7 +86,15 @@ def progress_bar(iterator, *args, text=None, **kwargs):
         widgets.extend([ShrinkableTextWidget(text), " "])
 
     # add other widgets
-    widgets.extend([progressbar.Timer(), progressbar.Bar(), progressbar.ETA()])
+    widgets.extend(
+        [
+            progressbar.Percentage(),
+            progressbar.Bar(),
+            progressbar.Timer(),
+            " ",
+            progressbar.ETA(),
+        ]
+    )
 
     # create progress bar
     progress = progressbar.ProgressBar(*args, widgets=widgets, **kwargs)
