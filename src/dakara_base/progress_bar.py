@@ -31,7 +31,6 @@ The text is displayed as a log entry.
 
 
 import logging
-from contextlib import contextmanager
 
 import progressbar
 from progressbar.widgets import WidgetBase
@@ -69,8 +68,7 @@ class ShrinkableTextWidget(WidgetBase):
         return text.ljust(width)
 
 
-@contextmanager
-def progress_bar(*args, text=None, **kwargs):
+def progress_bar(iterator, *args, text=None, **kwargs):
     """Gives the default un-muted progress bar for the project
 
     It prints an optionnal shrinkable text, a timer, a progress bar and an ETA.
@@ -91,17 +89,11 @@ def progress_bar(*args, text=None, **kwargs):
     widgets.extend([progressbar.Timer(), progressbar.Bar(), progressbar.ETA()])
 
     # create progress bar
-    try:
-        yield progressbar.progressbar(*args, widgets=widgets, **kwargs)
-
-    finally:
-        # stop capturing stderr no matter what
-        # see #15
-        progressbar.streams.stop_capturing()
+    progress = progressbar.ProgressBar(*args, widgets=widgets, **kwargs)
+    return progress(iterator)
 
 
-@contextmanager
-def null_bar(*args, text=None, **kwargs):
+def null_bar(iterator, *args, text=None, **kwargs):
     """Gives the defaylt muted progress bar for the project
 
     It only logs the optionnal text.
@@ -117,9 +109,5 @@ def null_bar(*args, text=None, **kwargs):
         logger.info(text)
 
     # create null progress bar
-    bar = progressbar.NullBar()
-    try:
-        yield bar(*args, **kwargs)
-
-    finally:
-        pass
+    progress = progressbar.NullBar(*args, **kwargs)
+    return progress(iterator)

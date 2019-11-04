@@ -90,11 +90,12 @@ class ProgressBarTestCase(TestCase):
             lines = self.get_lines(file)
 
         # assert the lines
-        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(lines), 3)
         self.assertEqual(
             lines,
             [
                 "some text here   Elapsed Time: 0:00:00|           |ETA:  --:--:--",
+                "some text here   Elapsed Time: 0:00:00|###########|Time:  0:00:00",
                 "some text here   Elapsed Time: 0:00:00|###########|Time:  0:00:00",
             ],
         )
@@ -113,11 +114,12 @@ class ProgressBarTestCase(TestCase):
             lines = self.get_lines(file)
 
         # assert the lines
-        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(lines), 3)
         self.assertEqual(
             lines,
             [
                 "Elapsed Time: 0:00:00|                            |ETA:  --:--:--",
+                "Elapsed Time: 0:00:00|############################|Time:  0:00:00",
                 "Elapsed Time: 0:00:00|############################|Time:  0:00:00",
             ],
         )
