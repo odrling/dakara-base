@@ -81,11 +81,10 @@ class ProgressBarTestCase(TestCase):
         """
         # call the bar
         with StringIO() as file:
-            with progress_bar.progress_bar(
+            for _ in progress_bar.progress_bar(
                 range(1), fd=file, term_width=65, text="some text here"
-            ) as progress:
-                for _ in progress:
-                    pass
+            ):
+                pass
 
             lines = self.get_lines(file)
 
@@ -105,11 +104,8 @@ class ProgressBarTestCase(TestCase):
         """
         # call the bar
         with StringIO() as file:
-            with progress_bar.progress_bar(
-                range(1), fd=file, term_width=65
-            ) as progress:
-                for _ in progress:
-                    pass
+            for _ in progress_bar.progress_bar(range(1), fd=file, term_width=65):
+                pass
 
             lines = self.get_lines(file)
 
@@ -140,11 +136,8 @@ class ProgressBarTestCase(TestCase):
 
             # execute the progressbar without exception
             with StringIO() as file:
-                with progress_bar.progress_bar(
-                    range(1), fd=file, term_width=65
-                ) as progress:
-                    for _ in progress:
-                        pass
+                for _ in progress_bar.progress_bar(range(1), fd=file, term_width=65):
+                    pass
 
             sys.stderr.write("error")
             after_stderr = sys.stderr
@@ -184,11 +177,10 @@ class ProgressBarTestCase(TestCase):
             # execute the progressbar with an exception
             with StringIO() as file:
                 try:
-                    with progress_bar.progress_bar(
+                    for _ in progress_bar.progress_bar(
                         range(1), fd=file, term_width=65
-                    ) as progress:
-                        for _ in progress:
-                            raise MyException("error")
+                    ):
+                        raise MyException("error")
 
                 except MyException:
                     pass
@@ -236,9 +228,8 @@ class NullBarTestCase(TestCase):
         # call the bar
         with self.assertLogs("dakara_base.progress_bar") as logger:
             self.logger.info("start bar")
-            with progress_bar.null_bar(range(1), text="some text here") as progress:
-                for _ in progress:
-                    pass
+            for _ in progress_bar.null_bar(range(1), text="some text here"):
+                pass
 
             self.logger.info("end bar")
 
@@ -258,9 +249,8 @@ class NullBarTestCase(TestCase):
         # call the bar
         with self.assertLogs("dakara_base.progress_bar") as logger:
             self.logger.info("start bar")
-            with progress_bar.null_bar(range(1)) as progress:
-                for _ in progress:
-                    pass
+            for _ in progress_bar.null_bar(range(1)):
+                pass
 
             self.logger.info("end bar")
 

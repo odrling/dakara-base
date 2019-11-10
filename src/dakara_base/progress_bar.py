@@ -11,9 +11,8 @@ The `progress_bar` is a progress bar that can display a descriptive text to
 inform which task is going on:
 
 >>> items = ["one", "two", "three"]
->>> with progress_bar(items, text="brief description of the task") as progress_items:
-...     for item in progress_items:
-...         pass
+>>> for item in progress_bar(items, text="brief description of the task"):
+...     pass
 
 The text adapts to the screen width using the `ShrinkableTextWidget` widget.
 
@@ -22,9 +21,8 @@ initialy designed to be used on logs with the same interface as a bar, in order
 to not pollute the log file.
 
 >>> items = ["one", "two", "three"]
->>> with null_bar(items, text="brief description of the task") as progress_items:
-...     for item in progress_items:
-...         pass
+>>> for item in null_bar(items, text="brief description of the task"):
+...     pass
 
 The text is displayed as a log entry.
 """
@@ -69,7 +67,7 @@ class ShrinkableTextWidget(WidgetBase):
 
 
 def progress_bar(iterator, *args, text=None, **kwargs):
-    """Gives the default un-muted progress bar for the project
+    """Generator that gives the default un-muted progress bar for the project
 
     It prints an optionnal shrinkable text, a timer, a progress bar and an ETA.
 
@@ -78,7 +76,7 @@ def progress_bar(iterator, *args, text=None, **kwargs):
         text (str): text to display describing the current operation.
 
     Returns:
-        generator: progress bar.
+        generator object: item handled by the progress bar.
     """
     widgets = []
 
@@ -98,12 +96,13 @@ def progress_bar(iterator, *args, text=None, **kwargs):
     )
 
     # create progress bar
-    progress = progressbar.ProgressBar(*args, widgets=widgets, **kwargs)
-    return progress(iterator)
+    with progressbar.ProgressBar(*args, widgets=widgets, **kwargs) as progress:
+        for item in progress(iterator):
+            yield item
 
 
 def null_bar(iterator, *args, text=None, **kwargs):
-    """Gives the defaylt muted progress bar for the project
+    """Generator that gives the defaylt muted progress bar for the project
 
     It only logs the optionnal text.
 
@@ -112,12 +111,13 @@ def null_bar(iterator, *args, text=None, **kwargs):
         text (str): text to log describing the current operation.
 
     Returns:
-        progressbar.bar.NullBar: null progress bar that does not do anything.
+        generator object: item handled by the progress bar.
     """
     # log text immediately
     if text:
         logger.info(text)
 
     # create null progress bar
-    progress = progressbar.NullBar(*args, **kwargs)
-    return progress(iterator)
+    with progressbar.NullBar(*args, **kwargs) as progress:
+        for item in progress(iterator):
+            yield item

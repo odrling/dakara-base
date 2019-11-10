@@ -37,8 +37,6 @@
 
 ### Changed
 
-- `progress_bar`: the different progress bars have to be used as context managers (and not directly as iterators).
-  See module help for examples.
 - `progress_bar`: the progress bar now displays percentage.
 
 ### Fixed
