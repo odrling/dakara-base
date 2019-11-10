@@ -1,7 +1,11 @@
 import logging
+import sys
+from contextlib import contextmanager
 from io import StringIO
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+import progressbar
 
 from dakara_base import progress_bar
 
@@ -85,12 +89,13 @@ class ProgressBarTestCase(TestCase):
             lines = self.get_lines(file)
 
         # assert the lines
-        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(lines), 3)
         self.assertEqual(
             lines,
             [
-                "some text here   Elapsed Time: 0:00:00|           |ETA:  --:--:--",
-                "some text here   Elapsed Time: 0:00:00|###########|Time:  0:00:00",
+                "some text here   N/A% |    | Elapsed Time: 0:00:00 ETA:  --:--:--",
+                "some text here   100% |####| Elapsed Time: 0:00:00 Time:  0:00:00",
+                "some text here   100% |####| Elapsed Time: 0:00:00 Time:  0:00:00",
             ],
         )
 
@@ -105,14 +110,108 @@ class ProgressBarTestCase(TestCase):
             lines = self.get_lines(file)
 
         # assert the lines
-        self.assertEqual(len(lines), 2)
+        self.assertEqual(len(lines), 3)
         self.assertEqual(
             lines,
             [
-                "Elapsed Time: 0:00:00|                            |ETA:  --:--:--",
-                "Elapsed Time: 0:00:00|############################|Time:  0:00:00",
+                "N/A% |                     | Elapsed Time: 0:00:00 ETA:  --:--:--",
+                "100% |#####################| Elapsed Time: 0:00:00 Time:  0:00:00",
+                "100% |#####################| Elapsed Time: 0:00:00 Time:  0:00:00",
             ],
         )
+
+    def test_stderr_on_no_exception(self):
+        """Test to check stderr is not captured if no exceptions occur
+        """
+        stderr = StringIO()
+        initial_stderr = sys.stderr
+
+        # we patch `sys.stderr` as it is risky to work directly on it, and we
+        # patch `progressbar.streams.original_stderr` as it is defined at
+        # module loading
+        with patch("sys.stderr", stderr), patch(
+            "progressbar.streams.original_stderr", stderr
+        ), wrap_stderr_progressbar():
+            wrapped_stderr = sys.stderr
+
+            # execute the progressbar without exception
+            with StringIO() as file:
+                for _ in progress_bar.progress_bar(range(1), fd=file, term_width=65):
+                    pass
+
+            sys.stderr.write("error")
+            after_stderr = sys.stderr
+
+        final_stderr = sys.stderr
+
+        # assert stderrs
+        self.assertIs(initial_stderr, final_stderr)
+        self.assertIs(wrapped_stderr, after_stderr)
+        self.assertIsNot(initial_stderr, wrapped_stderr)
+        self.assertIsNot(stderr, wrapped_stderr)
+        self.assertIsNot(stderr, initial_stderr)
+
+        # assert stderr value
+        value = stderr.getvalue()
+        self.assertEqual(value, "error")
+
+    def test_no_stderr_on_exception(self):
+        """Test to check stderr does not remain captured after an exception
+
+        When leaving a progress bar by an exception, it does not call
+        `progressbar.streams.stop_capturing` and the stderr is allways
+        captured.
+        """
+
+        class MyException(Exception):
+            pass
+
+        stderr = StringIO()
+        initial_stderr = sys.stderr
+
+        with patch("sys.stderr", stderr), patch(
+            "progressbar.streams.original_stderr", stderr
+        ), wrap_stderr_progressbar():
+            wrapped_stderr = sys.stderr
+
+            # execute the progressbar with an exception
+            with StringIO() as file:
+                try:
+                    for _ in progress_bar.progress_bar(
+                        range(1), fd=file, term_width=65
+                    ):
+                        raise MyException("error")
+
+                except MyException:
+                    pass
+
+            sys.stderr.write("error")
+            after_stderr = sys.stderr
+
+        final_stderr = sys.stderr
+
+        # assert stderrs
+        self.assertIs(initial_stderr, final_stderr)
+        self.assertIs(wrapped_stderr, after_stderr)
+        self.assertIsNot(initial_stderr, wrapped_stderr)
+        self.assertIsNot(stderr, wrapped_stderr)
+        self.assertIsNot(stderr, initial_stderr)
+
+        # assert stderr value
+        value = stderr.getvalue()
+        self.assertEqual(value, "error")
+
+
+@contextmanager
+def wrap_stderr_progressbar():
+    """Temporary wrap stderr with progressbar tools
+    """
+    try:
+        progressbar.streams.wrap_stderr()
+        yield None
+
+    finally:
+        progressbar.streams.unwrap_stderr()
 
 
 class NullBarTestCase(TestCase):

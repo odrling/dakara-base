@@ -66,16 +66,18 @@ class ShrinkableTextWidget(WidgetBase):
         return text.ljust(width)
 
 
-def progress_bar(*args, text=None, **kwargs):
-    """Gives the default un-muted progress bar for the project
+def progress_bar(iterator, *args, text=None, **kwargs):
+    """Generator that gives the default un-muted progress bar for the project
 
-    It prints an optionnal shrinkable text, a timer, a progress bar and an ETA.
+    It prints an optionnal shrinkable text (if a text is provided), a
+    percentage progress, a progress bar and an adaptative ETA.
 
     Args:
+        iterator (iterator): iterator of items to use the bar with.
         text (str): text to display describing the current operation.
 
     Returns:
-        generator: progress bar.
+        generator object: item handled by the progress bar.
     """
     widgets = []
 
@@ -84,27 +86,41 @@ def progress_bar(*args, text=None, **kwargs):
         widgets.extend([ShrinkableTextWidget(text), " "])
 
     # add other widgets
-    widgets.extend([progressbar.Timer(), progressbar.Bar(), progressbar.ETA()])
+    widgets.extend(
+        [
+            progressbar.Percentage(),
+            " ",
+            progressbar.Bar(),
+            " ",
+            progressbar.Timer(),
+            " ",
+            progressbar.AdaptiveETA(),
+        ]
+    )
 
     # create progress bar
-    return progressbar.progressbar(*args, widgets=widgets, **kwargs)
+    with progressbar.ProgressBar(*args, widgets=widgets, **kwargs) as progress:
+        for item in progress(iterator):
+            yield item
 
 
-def null_bar(*args, text=None, **kwargs):
-    """Gives the defaylt muted progress bar for the project
+def null_bar(iterator, *args, text=None, **kwargs):
+    """Generator that gives the defaylt muted progress bar for the project
 
     It only logs the optionnal text.
 
     Args:
+        iterator (iterator): iterator of items to use the bar with.
         text (str): text to log describing the current operation.
 
     Returns:
-        progressbar.bar.NullBar: null progress bar that does not do anything.
+        generator object: item handled by the progress bar.
     """
     # log text immediately
     if text:
         logger.info(text)
 
     # create null progress bar
-    bar = progressbar.NullBar()
-    return bar(*args, **kwargs)
+    with progressbar.NullBar(*args, **kwargs) as progress:
+        for item in progress(iterator):
+            yield item
