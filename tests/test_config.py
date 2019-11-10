@@ -204,7 +204,6 @@ class GetConfigDirectoryTestCase(TestCase):
         )
 
 
-@patch("dakara_base.config.print")
 @patch.object(Path, "copyfile")
 @patch.object(Path, "exists")
 @patch.object(Path, "mkdir_p")
@@ -227,7 +226,6 @@ class CreateConfigFileTestCase(TestCase):
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
-        mocked_print,
     ):
         """Test to create the config file in an empty directory
         """
@@ -235,7 +233,8 @@ class CreateConfigFileTestCase(TestCase):
         mocked_exists.return_value = False
 
         # call the function
-        create_config_file("module.resources", "config.yaml")
+        with self.assertLogs("dakara_base.config") as logger:
+            create_config_file("module.resources", "config.yaml")
 
         # assert the call
         mocked_get_file.assert_called_with("module.resources", "config.yaml")
@@ -245,10 +244,15 @@ class CreateConfigFileTestCase(TestCase):
         mocked_copyfile.assert_called_with(
             Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
         )
-        mocked_print.assert_called_with(
-            "Config created in {}".format(
-                Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
-            )
+
+        # assert the logs
+        self.assertListEqual(
+            logger.output,
+            [
+                "INFO:dakara_base.config:Config created in '{}'".format(
+                    Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+                )
+            ],
         )
 
     @patch("dakara_base.config.input")
@@ -260,7 +264,6 @@ class CreateConfigFileTestCase(TestCase):
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
-        mocked_print,
     ):
         """Test to create the config file in a non empty directory
         """
@@ -273,7 +276,6 @@ class CreateConfigFileTestCase(TestCase):
 
         # assert the call
         mocked_copyfile.assert_not_called()
-        mocked_print.assert_not_called()
         mocked_input.assert_called_with(
             "{} already exists, overwrite? [y/N] ".format(
                 Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
@@ -289,7 +291,6 @@ class CreateConfigFileTestCase(TestCase):
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
-        mocked_print,
     ):
         """Test to create the config file in a non empty directory with invalid input
         """
@@ -302,7 +303,6 @@ class CreateConfigFileTestCase(TestCase):
 
         # assert the call
         mocked_copyfile.assert_not_called()
-        mocked_print.assert_not_called()
 
     @patch("dakara_base.config.input")
     def test_create_existing_force(
@@ -313,7 +313,6 @@ class CreateConfigFileTestCase(TestCase):
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
-        mocked_print,
     ):
         """Test to create the config file in a non empty directory with force overwrite
         """

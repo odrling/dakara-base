@@ -180,7 +180,7 @@ def create_config_file(resource, filename, force=False):
 
     # copy file
     origin.copyfile(destination)
-    print("Config created in {}".format(destination))
+    logger.info("Config created in '{}'".format(destination))
 
 
 def get_config_file(filename):

@@ -55,6 +55,7 @@ echo "Version bumped to $version_number"
 
 # patch version file for dev version
 cat <<EOF >$version_file
+# this file is automatically updated by bump_version.sh, do not edit it!
 __version__ = "$dev_version_number"
 __date__ = "$version_date"
 EOF
