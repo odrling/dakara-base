@@ -69,7 +69,8 @@ class ShrinkableTextWidget(WidgetBase):
 def progress_bar(iterator, *args, text=None, **kwargs):
     """Generator that gives the default un-muted progress bar for the project
 
-    It prints an optionnal shrinkable text, a timer, a progress bar and an ETA.
+    It prints an optionnal shrinkable text (if a text is provided), a
+    percentage progress, a progress bar and an adaptative ETA.
 
     Args:
         iterator (iterator): iterator of items to use the bar with.
@@ -88,10 +89,12 @@ def progress_bar(iterator, *args, text=None, **kwargs):
     widgets.extend(
         [
             progressbar.Percentage(),
+            " ",
             progressbar.Bar(),
+            " ",
             progressbar.Timer(),
             " ",
-            progressbar.ETA(),
+            progressbar.AdaptiveETA(),
         ]
     )
 
