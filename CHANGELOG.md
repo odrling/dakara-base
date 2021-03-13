@@ -30,6 +30,11 @@
 
 ## Unreleased
 
+### Removed
+
+- Removed module `resources_manager`.
+  Use the standard `importlib.resources` instead.
+
 ## 1.2.0 - 2019-11-10
 
 ### Added

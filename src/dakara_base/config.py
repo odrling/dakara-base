@@ -43,8 +43,13 @@ import progressbar
 import yaml
 from path import Path
 
+try:
+    from importlib.resources import path
+
+except ImportError:
+    from importlib_resources import path
+
 from dakara_base.exceptions import DakaraError
-from dakara_base.resources_manager import get_file
 
 
 LOG_FORMAT = "[%(asctime)s] %(name)s %(levelname)s %(message)s"
@@ -158,29 +163,30 @@ def create_config_file(resource, filename, force=False):
         force (bool): if True, config file in user directory is overwritten if
             it existed already. Otherwise, prompt the user.
     """
-    # get the file
-    origin = get_file(resource, filename)
-    destination = get_config_file(filename)
+    with path(resource, filename) as file:
+        # get the file
+        origin = Path(file)
+        destination = get_config_file(filename)
 
-    # create directory
-    destination.dirname().mkdir_p()
+        # create directory
+        destination.dirname().mkdir_p()
 
-    # check destination does not exist
-    if not force and destination.exists():
-        try:
-            result = strtobool(
-                input("{} already exists, overwrite? [y/N] ".format(destination))
-            )
+        # check destination does not exist
+        if not force and destination.exists():
+            try:
+                result = strtobool(
+                    input("{} already exists, overwrite? [y/N] ".format(destination))
+                )
 
-        except ValueError:
-            result = False
+            except ValueError:
+                result = False
 
-        if not result:
-            return
+            if not result:
+                return
 
-    # copy file
-    origin.copyfile(destination)
-    logger.info("Config created in '{}'".format(destination))
+        # copy file
+        origin.copyfile(destination)
+        logger.info("Config created in '{}'".format(destination))
 
 
 def get_config_file(filename):
