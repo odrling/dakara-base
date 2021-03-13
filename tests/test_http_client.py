@@ -66,7 +66,7 @@ class HTTPClientTestCase(TestCase):
         self.url_endpoint = "http://www.example.com/api/endpoint/"
 
         # create login URL
-        self.url_login = "http://www.example.com/api/token-auth/"
+        self.url_login = "http://www.example.com/api/accounts/login/"
 
         # create a login and password
         self.login = "test"
@@ -317,7 +317,7 @@ class HTTPClientTestCase(TestCase):
 
         # call assertions
         mocked_post.assert_called_with(
-            self.url_login, json={"username": self.login, "password": self.password}
+            self.url_login, json={"login": self.login, "password": self.password}
         )
 
         # post assertions
@@ -330,7 +330,7 @@ class HTTPClientTestCase(TestCase):
             [
                 "DEBUG:dakara_base.http_client:Authenticate to the server",
                 "DEBUG:dakara_base.http_client:"
-                "Sending POST request to http://www.example.com/api/token-auth/",
+                "Sending POST request to http://www.example.com/api/accounts/login/",
                 "INFO:dakara_base.http_client:Login to server successful",
                 "DEBUG:dakara_base.http_client:Token: {}".format(self.token),
             ],

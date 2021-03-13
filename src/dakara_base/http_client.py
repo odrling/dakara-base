@@ -59,6 +59,7 @@ class HTTPClient:
     traditional login/password mechanism.
 
     Attributes:
+        AUTHENTICATE_ENDPOINT (str): Endpoint for authentication.
         mute_raise (bool): if true, no exception will be raised when performing
             connections with the server (but authentication), only logged.
         server_url (str): URL of the server.
@@ -77,6 +78,8 @@ class HTTPClient:
         ParameterError: if critical parameters cannot be found in the
             configuration.
     """
+
+    AUTHENTICATE_ENDPOINT = "accounts/login/"
 
     def __init__(self, config, endpoint_prefix="", mute_raise=False):
         self.mute_raise = mute_raise
@@ -341,7 +344,7 @@ class HTTPClient:
             AuthenticationError: if the connection is denied or if any onther
                 error occurs.
         """
-        data = {"username": self.login, "password": self.password}
+        data = {"login": self.login, "password": self.password}
 
         def on_error(response):
             # manage failed connection response
@@ -361,7 +364,7 @@ class HTTPClient:
         logger.debug("Authenticate to the server")
         response = self.send_request_raw(
             "post",
-            "token-auth/",
+            self.AUTHENTICATE_ENDPOINT,
             message_on_error="Unable to authenticate to the server",
             function_on_error=on_error,
             json=data,
