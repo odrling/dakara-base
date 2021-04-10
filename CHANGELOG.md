@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.3.0 - 2021-04-10
+
 ### Changed
 
 - Enpoint for HTTP client authenticated is stored in `dakara_base.http_client.HTTPClient.AUTHENTICATE_ENDPOINT` and can be edited.
