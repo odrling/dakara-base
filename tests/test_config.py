@@ -1,5 +1,11 @@
 from unittest import TestCase
-from unittest.mock import ANY, patch
+from unittest.mock import patch
+
+try:
+    from importlib.resources import path
+
+except ImportError:
+    from importlib_resources import path
 
 from path import Path
 from yaml.parser import ParserError
@@ -15,23 +21,19 @@ from dakara_base.config import (
     get_config_file,
     set_loglevel,
 )
-from dakara_base.resources_manager import get_file
 
 
 class LoadConfigTestCase(TestCase):
     """Test the `load_config` function
     """
 
-    def setUp(self):
-        # create config path
-        self.config_path = get_file("tests.resources", "config.yaml")
-
     def test_success(self):
         """Test to load a config file
         """
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG") as logger:
-            config = load_config(self.config_path, False)
+            with path("tests.resources", "config.yaml") as file:
+                config = load_config(Path(file), False)
 
         # assert the result
         self.assertDictEqual(config, {"key": {"subkey": "value"}})
@@ -39,11 +41,7 @@ class LoadConfigTestCase(TestCase):
         # assert the effect on logs
         self.assertListEqual(
             logger.output,
-            [
-                "INFO:dakara_base.config:Loading config file '{}'".format(
-                    self.config_path
-                )
-            ],
+            ["INFO:dakara_base.config:Loading config file '{}'".format(Path(file))],
         )
 
     def test_success_debug(self):
@@ -51,7 +49,8 @@ class LoadConfigTestCase(TestCase):
         """
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
-            config = load_config(self.config_path, True)
+            with path("tests.resources", "config.yaml") as file:
+                config = load_config(Path(file), True)
 
         # assert the result
         self.assertDictEqual(config, {"key": {"subkey": "value"}, "loglevel": "DEBUG"})
@@ -61,11 +60,8 @@ class LoadConfigTestCase(TestCase):
         """
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
-            with self.assertRaises(ConfigNotFoundError) as error:
+            with self.assertRaisesRegex(ConfigNotFoundError, "No config file found"):
                 load_config(Path("nowhere"), False)
-
-        # assert the error
-        self.assertEqual(str(error.exception), "No config file found")
 
     @patch("dakara_base.config.yaml.load", autospec=True)
     def test_load_config_fail_parser_error(self, mocked_load):
@@ -76,26 +72,22 @@ class LoadConfigTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
-            with self.assertRaises(ConfigParseError) as error:
-                load_config(self.config_path, False)
-
-        # assert the error
-        self.assertEqual(str(error.exception), "Unable to parse config file")
-
-        # assert the call
-        mocked_load.assert_called_with(ANY, Loader=ANY)
+            with path("tests.resources", "config.yaml") as file:
+                with self.assertRaisesRegex(
+                    ConfigParseError, "Unable to parse config file"
+                ):
+                    load_config(Path(file), False)
 
     def test_load_config_fail_missing_keys(self):
         """Test to load a config file without required keys
         """
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
-            with self.assertRaises(ConfigInvalidError) as error:
-                load_config(self.config_path, False, ["not-present"])
-
-        self.assertEqual(
-            str(error.exception), "Invalid config file, missing 'not-present'"
-        )
+            with path("tests.resources", "config.yaml") as file:
+                with self.assertRaisesRegex(
+                    ConfigInvalidError, "Invalid config file, missing 'not-present'"
+                ):
+                    load_config(Path(file), False, ["not-present"])
 
 
 @patch("dakara_base.config.LOG_FORMAT", "my format")
@@ -194,14 +186,11 @@ class GetConfigDirectoryTestCase(TestCase):
     def test_unknown(self):
         """Test to get config directory for unknown OS
         """
-        with self.assertRaises(NotImplementedError) as error:
+        with self.assertRaisesRegex(
+            NotImplementedError,
+            r"This operating system \(unknown\) is not currently supported",
+        ):
             get_config_directory()
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception),
-            "This operating system (unknown) is not currently supported",
-        )
 
 
 @patch.object(Path, "copyfile")
@@ -209,19 +198,16 @@ class GetConfigDirectoryTestCase(TestCase):
 @patch.object(Path, "mkdir_p")
 @patch(
     "dakara_base.config.get_config_file",
-    return_value=Path("/").normpath() / "path" / "to" / "directory" / "config.yaml",
+    return_value=Path("path") / "to" / "directory" / "config.yaml",
 )
-@patch(
-    "dakara_base.config.get_file",
-    return_value=Path("/").normpath() / "path" / "to" / "file",
-)
+@patch("dakara_base.config.path",)
 class CreateConfigFileTestCase(TestCase):
     """Test the config file creator
     """
 
     def test_create_empty(
         self,
-        mocked_get_file,
+        mocked_path,
         mocked_get_config_file,
         mocked_mkdir_p,
         mocked_exists,
@@ -237,12 +223,12 @@ class CreateConfigFileTestCase(TestCase):
             create_config_file("module.resources", "config.yaml")
 
         # assert the call
-        mocked_get_file.assert_called_with("module.resources", "config.yaml")
+        mocked_path.assert_called_with("module.resources", "config.yaml")
         mocked_get_config_file.assert_called_with("config.yaml")
         mocked_mkdir_p.assert_called_with()
         mocked_exists.assert_called_with()
         mocked_copyfile.assert_called_with(
-            Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+            Path("path") / "to" / "directory" / "config.yaml"
         )
 
         # assert the logs
@@ -250,7 +236,7 @@ class CreateConfigFileTestCase(TestCase):
             logger.output,
             [
                 "INFO:dakara_base.config:Config created in '{}'".format(
-                    Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+                    Path("path") / "to" / "directory" / "config.yaml"
                 )
             ],
         )
@@ -259,7 +245,7 @@ class CreateConfigFileTestCase(TestCase):
     def test_create_existing_no(
         self,
         mocked_input,
-        mocked_get_file,
+        mocked_path,
         mocked_get_config_file,
         mocked_mkdir_p,
         mocked_exists,
@@ -278,7 +264,7 @@ class CreateConfigFileTestCase(TestCase):
         mocked_copyfile.assert_not_called()
         mocked_input.assert_called_with(
             "{} already exists, overwrite? [y/N] ".format(
-                Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+                Path("path") / "to" / "directory" / "config.yaml"
             )
         )
 
@@ -286,7 +272,7 @@ class CreateConfigFileTestCase(TestCase):
     def test_create_existing_invalid_input(
         self,
         mocked_input,
-        mocked_get_file,
+        mocked_path,
         mocked_get_config_file,
         mocked_mkdir_p,
         mocked_exists,
@@ -308,7 +294,7 @@ class CreateConfigFileTestCase(TestCase):
     def test_create_existing_force(
         self,
         mocked_input,
-        mocked_get_file,
+        mocked_path,
         mocked_get_config_file,
         mocked_mkdir_p,
         mocked_exists,
@@ -323,13 +309,13 @@ class CreateConfigFileTestCase(TestCase):
         mocked_exists.assert_not_called()
         mocked_input.assert_not_called()
         mocked_copyfile.assert_called_with(
-            Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
+            Path("path") / "to" / "directory" / "config.yaml"
         )
 
 
 @patch(
     "dakara_base.config.get_config_directory",
-    return_value=Path("/").normpath() / "path" / "to" / "directory",
+    return_value=Path("path") / "to" / "directory",
 )
 class GetConfigFileTestCase(TestCase):
     """Test the config file getter
@@ -339,6 +325,4 @@ class GetConfigFileTestCase(TestCase):
         """Test to get config file
         """
         result = get_config_file("config.yaml")
-        self.assertEqual(
-            result, Path("/").normpath() / "path" / "to" / "directory" / "config.yaml"
-        )
+        self.assertEqual(result, Path("path") / "to" / "directory" / "config.yaml")

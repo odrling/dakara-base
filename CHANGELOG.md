@@ -35,6 +35,11 @@
 - Enpoint for HTTP client authenticated is stored in `dakara_base.http_client.HTTPClient.AUTHENTICATE_ENDPOINT` and can be edited.
   Default value was updated to `accounts/login/`.
 
+### Removed
+
+- Removed module `resources_manager`.
+  Use the standard `importlib.resources` instead.
+
 ## 1.2.0 - 2019-11-10
 
 ### Added
