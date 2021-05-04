@@ -11,10 +11,6 @@ branches:
   - develop
   - master
 
-# enable cache for Python dependencies
-cache:
-  - "%LOCALAPPDATA%\\pip\\Cache"
-
 environment:
   # setup special environment variable for Appveyor CI test environment
   # it is used to disable some tests that can be harmful in this context
@@ -23,35 +19,48 @@ environment:
   # setup tests matrix
   matrix:
     - TOXENV: "py36"
+      PYTHON: "3.6"
     - TOXENV: "py37"
+      PYTHON: "3.7"
     - TOXENV: "py38"
+      PYTHON: "3.8"
     - TOXENV: "py39"
+      PYTHON: "3.9"
 
-# commands to install python dependencies
-install:
-  # the features used in setup.cfg require at decent version of setuptools
-  - "pip install --upgrade \"setuptools>=40.0\""
+for:
+  - matrix:
+      only:
+        - image: Visual Studio 2019
 
-  # install dependencies for test
-  - "pip install -e \".[dev]\""
+    # enable cache for Python dependencies
+    cache:
+      - "%LOCALAPPDATA%\\pip\\Cache"
 
-# commands to run tests
-test_script:
-  # run tests
-  - "tox"
-  # - "py -%PYTHON% -m coverage run setup.py test"
-  #
-  # # run code formatting tests
-  # - "py -%PYTHON% -m  black . --check"
-  # - "py -%PYTHON% -m flake8"
+    # commands to install python dependencies
+    install:
+      # the features used in setup.cfg require at decent version of setuptools
+      - "py -%PYTHON% pip install --upgrade \"setuptools>=40.0\""
 
-# commands to manage tests results
-after_test:
-  # # show coverage stats
-  # - "py -%PYTHON% -m coverage report -m"
-  #
-  # # upload coverage stats to codecov.io
-  # # coverage must be called manually
-  # # codecov token is stored in appveyor settings
-  # - "py -%PYTHON% -m coverage xml"
-  # - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
+      # install dependencies for test
+      - "py -%PYTHON% pip install -e \".[dev]\""
+
+    # commands to run tests
+    test_script:
+      # run tests
+      - "tox"
+      # - "py -%PYTHON% -m coverage run setup.py test"
+      #
+      # # run code formatting tests
+      # - "py -%PYTHON% -m  black . --check"
+      # - "py -%PYTHON% -m flake8"
+
+    # commands to manage tests results
+    after_test:
+      # # show coverage stats
+      # - "py -%PYTHON% -m coverage report -m"
+      #
+      # # upload coverage stats to codecov.io
+      # # coverage must be called manually
+      # # codecov token is stored in appveyor settings
+      # - "py -%PYTHON% -m coverage xml"
+      # - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
