@@ -24,19 +24,23 @@ environment:
     - PYTHON: "3.8"
     - PYTHON: "3.9"
 
+# enable cache for Python dependencies
+cache:
+  - "%LOCALAPPDATA%\\pip\\Cache"
+  - "$HOME/.cache/pip"
+
 for:
   - matrix:
       only:
         - image: Ubuntu
 
-    # enable cache for Python dependencies
-    # cache:
-    #   - "%LOCALAPPDATA%\\pip\\Cache"
-
     init:
+      # load virtual env
       - "source $HOME/venv$PYTHON/bin/activate"
 
-    # commands to install python dependencies
+      # check current python version
+      - python --version
+
     install:
       # the features used in setup.cfg require at decent version of setuptools
       - "python -m pip install --upgrade \"setuptools>=40.0\""
@@ -44,7 +48,6 @@ for:
       # install dependencies for test
       - "python -m pip install -e \".[dev]\""
 
-    # commands to run tests
     test_script:
       # run tests
       - "python -m coverage run -m pytest -v"
@@ -53,7 +56,6 @@ for:
       - "python -m black . --check"
       - "python -m flake8"
 
-    # commands to manage tests results
     after_test:
       # show coverage stats
       - "python -m coverage report -m"
@@ -68,11 +70,10 @@ for:
       only:
         - image: Visual Studio 2019
 
-    # enable cache for Python dependencies
-    cache:
-      - "%LOCALAPPDATA%\\pip\\Cache"
+    init:
+      # check current python version
+      - python --version
 
-    # commands to install python dependencies
     install:
       # the features used in setup.cfg require at decent version of setuptools
       - "py -%PYTHON% -m pip install --upgrade \"setuptools>=40.0\""
@@ -80,7 +81,6 @@ for:
       # install dependencies for test
       - "py -%PYTHON% -m pip install -e \".[dev]\""
 
-    # commands to run tests
     test_script:
       # run tests
       - "py -%PYTHON% -m coverage run -m pytest -v"
@@ -89,7 +89,6 @@ for:
       - "py -%PYTHON% -m black . --check"
       - "py -%PYTHON% -m flake8"
 
-    # commands to manage tests results
     after_test:
       # show coverage stats
       - "py -%PYTHON% -m coverage report -m"
