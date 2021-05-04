@@ -2,6 +2,7 @@ version: 1.4.0-dev-{build}
 
 image:
   - Visual Studio 2019
+  - Ubuntu
 
 build: false
 
@@ -19,13 +20,9 @@ environment:
   # setup tests matrix
   matrix:
     - PYTHON: "3.6"
-      TOXENV: "py36"
     - PYTHON: "3.7"
-      TOXENV: "py37"
     - PYTHON: "3.8"
-      TOXENV: "py38"
     - PYTHON: "3.9"
-      TOXENV: "py39"
 
 for:
   - matrix:
@@ -47,7 +44,7 @@ for:
     # commands to run tests
     test_script:
       # run tests
-      - "py -%PYTHON% -m coverage run -m pytest"
+      - "py -%PYTHON% -m coverage run -m pytest -v"
 
       # run code formatting tests
       - "py -%PYTHON% -m black . --check"
@@ -63,3 +60,41 @@ for:
       # codecov token is stored in appveyor settings
       - "py -%PYTHON% -m coverage xml"
       - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
+
+  - matrix:
+      only:
+        - image: Ubuntu
+
+    # enable cache for Python dependencies
+    # cache:
+    #   - "%LOCALAPPDATA%\\pip\\Cache"
+
+    # commands to install python dependencies
+    install:
+      - "source $HOME/venv$PYTHON"
+
+      # the features used in setup.cfg require at decent version of setuptools
+      - "python -m pip install --upgrade \"setuptools>=40.0\""
+
+      # install dependencies for test
+      - "python -m pip install -e \".[dev]\""
+
+    # commands to run tests
+    test_script:
+      # run tests
+      - "python -m coverage run -m pytest -v"
+
+      # run code formatting tests
+      - "python -m black . --check"
+      - "python -m flake8"
+
+    # commands to manage tests results
+    after_test:
+      # show coverage stats
+      - "python -m coverage report -m"
+
+      # upload coverage stats to codecov.io
+      # coverage must be called manually
+      # codecov token is stored in appveyor settings
+      - "python -m coverage xml"
+      - "python -m codecov -X gcov --file coverage.xml"
