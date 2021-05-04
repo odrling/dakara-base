@@ -2,10 +2,8 @@ from contextlib import contextmanager
 from queue import Queue
 from threading import Event, Timer, Thread
 from time import sleep
-from unittest import TestCase, skipIf
-import os
-import signal
-import sys
+from unittest import TestCase
+from unittest.mock import patch
 
 from dakara_base.safe_workers import (
     BaseSafeThread,
@@ -580,12 +578,8 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
-    @skipIf(
-        os.environ.get("APPVEYOR", False) and "win" in sys.platform,
-        "Disabled for Appveyor CI on Windows",
-    )
     def test_run_interrupt(self):
-        """Test a run with an interruption by Ctrl+C
+        """Test a run with an interruption by KeyboardInterrupt exception
 
         The run should end with a set stop event and an empty errors queue.
         """
@@ -596,31 +590,16 @@ class RunnerTestCase(BaseTestCase):
         # get the class
         ready, WorkerReady = self.get_worker_ready()
 
-        # prepare the sending of SIGINT to simulate a Ctrl+C
-        def send_ctrl_c():
-            """Simulate the Ctrl+C
+        with patch.object(Thread, "start") as mocked_start:
+            mocked_start.side_effect = KeyboardInterrupt()
 
-            The signal is SIGINT on *NIX and  CTRL_C_EVENT on Windows.
-            """
-            pid = os.getpid()
-            ready.wait()
-            if sys.platform.startswith("win"):
-                os.kill(pid, signal.CTRL_C_EVENT)
-
-            else:
-                os.kill(pid, signal.SIGINT)
-
-        kill_thread = Thread(target=send_ctrl_c)
-        kill_thread.start()
-
-        # call the method
-        with self.assertNotRaises(KeyboardInterrupt):
+            # call the method
             self.runner.run_safe(WorkerReady)
 
         # post assertions
         self.assertTrue(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
-        self.assertFalse(kill_thread.is_alive())
+        mocked_start.assert_called_once()
 
     def test_run_error(self):
         """Test a run with an error
