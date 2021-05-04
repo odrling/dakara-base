@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from queue import Queue
-from threading import Event, Timer, Thread
+from threading import Event, Timer
 from time import sleep
 from unittest import TestCase
 from unittest.mock import patch
@@ -590,8 +590,8 @@ class RunnerTestCase(BaseTestCase):
         # get the class
         ready, WorkerReady = self.get_worker_ready()
 
-        with patch.object(Thread, "start") as mocked_start:
-            mocked_start.side_effect = KeyboardInterrupt()
+        with patch.object(Event, "wait") as mocked_wait:
+            mocked_wait.side_effect = KeyboardInterrupt()
 
             # call the method
             self.runner.run_safe(WorkerReady)
@@ -599,7 +599,7 @@ class RunnerTestCase(BaseTestCase):
         # post assertions
         self.assertTrue(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
-        mocked_start.assert_called_once()
+        mocked_wait.assert_called_once()
 
     def test_run_error(self):
         """Test a run with an error
