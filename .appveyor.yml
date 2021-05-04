@@ -47,7 +47,7 @@ for:
     # commands to run tests
     test_script:
       # run tests
-      - "tox"
+      - "py -%PYTHON% -m tox"
       # - "py -%PYTHON% -m coverage run setup.py test"
       #
       # # run code formatting tests
