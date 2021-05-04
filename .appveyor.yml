@@ -2,7 +2,6 @@ version: 1.4.0-dev-{build}
 
 image:
   - Visual Studio 2019
-  - Ubuntu
 
 build: false
 
@@ -11,11 +10,6 @@ branches:
   only:
   - develop
   - master
-
-for:
-  - matrix:
-    only:
-      - image: Visual Studio 2019
 
 # enable cache for Python dependencies
 cache:
