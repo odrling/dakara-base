@@ -580,7 +580,10 @@ class RunnerTestCase(BaseTestCase):
         # create class to test
         self.runner = Runner()
 
-    @skipIf(os.environ.get("APPVEYOR_CI_ENV", False), "Disabled for Appveyor CI")
+    @skipIf(
+        os.environ.get("APPVEYOR", False) and "win" in sys.platform,
+        "Disabled for Appveyor CI on Windows",
+    )
     def test_run_interrupt(self):
         """Test a run with an interruption by Ctrl+C
 
