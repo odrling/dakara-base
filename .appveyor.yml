@@ -39,7 +39,7 @@ for:
       - "source $HOME/venv$PYTHON/bin/activate"
 
       # check current python version
-      - python --version
+      - "python --version"
 
     install:
       # the features used in setup.cfg require at decent version of setuptools
@@ -72,7 +72,7 @@ for:
 
     init:
       # check current python version
-      - python --version
+      - "py -%PYTHON% --version"
 
     install:
       # the features used in setup.cfg require at decent version of setuptools
