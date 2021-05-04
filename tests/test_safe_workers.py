@@ -22,7 +22,7 @@ from dakara_base.safe_workers import (
 )
 
 
-class TestError(Exception):
+class MyError(Exception):
     """Dummy error class
     """
 
@@ -46,9 +46,9 @@ class BaseTestCase(TestCase):
         return
 
     def function_error(self):
-        """Function that raises a TestError
+        """Function that raises a MyError
         """
-        raise TestError("test error")
+        raise MyError("test error")
 
     @contextmanager
     def assertNotRaises(self, ExceptionClass):
@@ -117,7 +117,7 @@ class SafeTestCase(BaseTestCase):
         """Test an error function of a worker
 
         Test that an error function does not trigger any error, sets the stop
-        event and puts a TestError in the error queue.
+        event and puts a MyError in the error queue.
         """
         # pre assertions
         self.assertFalse(self.stop.is_set())
@@ -128,14 +128,14 @@ class SafeTestCase(BaseTestCase):
         worker = Worker(self.stop, self.errors)
 
         # call the method
-        with self.assertNotRaises(TestError):
+        with self.assertNotRaises(MyError):
             worker.function_error()
 
         # post assertions
         self.assertTrue(self.stop.is_set())
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertIsInstance(error, MyError)
 
     def test_thread(self):
         """Test a thread
@@ -215,7 +215,7 @@ class SafeThreadTestCase(BaseTestCase):
         """Test an error function
 
         Test that an error function run as a thread does not trigger any error,
-        sets the stop event and puts a TestError in the error queue.
+        sets the stop event and puts a MyError in the error queue.
         """
         # pre assertions
         self.assertFalse(self.stop.is_set())
@@ -225,7 +225,7 @@ class SafeThreadTestCase(BaseTestCase):
         controlled_thread = self.create_controlled_thread(self.function_error)
 
         # run thread
-        with self.assertNotRaises(TestError):
+        with self.assertNotRaises(MyError):
             controlled_thread.start()
             controlled_thread.join()
 
@@ -233,7 +233,7 @@ class SafeThreadTestCase(BaseTestCase):
         self.assertTrue(self.stop.is_set())
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertIsInstance(error, MyError)
 
 
 class SafeTimerTestCase(SafeThreadTestCase):
@@ -281,7 +281,7 @@ class WorkerTestCase(BaseTestCase):
         self.assertTrue(self.errors.empty())
 
         # create and run worker
-        with self.assertRaises(TestError):
+        with self.assertRaises(MyError):
             with Worker(self.stop, self.errors):
                 self.function_error()
 
@@ -323,7 +323,7 @@ class WorkerTestCase(BaseTestCase):
         self.assertTrue(self.errors.empty())
 
         # create and run worker
-        with self.assertNotRaises(TestError):
+        with self.assertNotRaises(MyError):
             with Worker(self.stop, self.errors) as worker:
                 worker.thread = worker.create_thread(target=self.function_error)
                 worker.thread.start()
@@ -333,7 +333,7 @@ class WorkerTestCase(BaseTestCase):
         self.assertTrue(self.stop.is_set())
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertIsInstance(error, MyError)
 
 
 class WorkerSafeTimerTestCase(BaseTestCase):
@@ -549,7 +549,7 @@ class RunnerTestCase(BaseTestCase):
         def test(self):
             """Raise an error
             """
-            raise TestError("test error")
+            raise MyError("test error")
 
     @staticmethod
     def get_worker_ready():
@@ -622,7 +622,7 @@ class RunnerTestCase(BaseTestCase):
     def test_run_error(self):
         """Test a run with an error
 
-        The run should raise a TestError, end with a set stop event and an
+        The run should raise a MyError, end with a set stop event and an
         empty error queue.
         """
         # pre assertions
@@ -630,7 +630,7 @@ class RunnerTestCase(BaseTestCase):
         self.assertTrue(self.runner.errors.empty())
 
         # call the method
-        with self.assertRaises(TestError):
+        with self.assertRaises(MyError):
             self.runner.run_safe(self.WorkerError)
 
         # post assertions

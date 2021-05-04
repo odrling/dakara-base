@@ -1,6 +1,8 @@
-image: Visual Studio 2019
-
 version: 1.4.0-dev-{build}
+
+image:
+  - Visual Studio 2019
+  - Ubuntu
 
 build: false
 
@@ -9,6 +11,11 @@ branches:
   only:
   - develop
   - master
+
+for:
+  - matrix:
+    only:
+      - image: Visual Studio 2019
 
 # enable cache for Python dependencies
 cache:
@@ -21,40 +28,36 @@ environment:
 
   # setup tests matrix
   matrix:
-    - PYTHON: "3.5"
-    - PYTHON: "3.6"
-    - PYTHON: "3.7"
-    - PYTHON: "3.8"
-    - PYTHON: "3.9"
-
-# check current python version
-init:
-  - "py -%PYTHON% --version"
+    - TOXENV: "py36"
+    - TOXENV: "py37"
+    - TOXENV: "py38"
+    - TOXENV: "py39"
 
 # commands to install python dependencies
 install:
   # the features used in setup.cfg require at decent version of setuptools
-  - "py -%PYTHON% -m pip install --upgrade \"setuptools>=40.0\""
+  - "pip install --upgrade \"setuptools>=40.0\""
 
   # install dependencies for test
-  - "py -%PYTHON% -m pip install -e \".[tests]\""
+  - "pip install -e \".[dev]\""
 
 # commands to run tests
 test_script:
   # run tests
-  - "py -%PYTHON% -m coverage run setup.py test"
-
-  # run code formatting tests
-  - "if NOT %PYTHON% == 3.5 (py -%PYTHON% -m  black . --check)"
-  - "py -%PYTHON% -m flake8"
+  - "tox"
+  # - "py -%PYTHON% -m coverage run setup.py test"
+  #
+  # # run code formatting tests
+  # - "py -%PYTHON% -m  black . --check"
+  # - "py -%PYTHON% -m flake8"
 
 # commands to manage tests results
 after_test:
-  # show coverage stats
-  - "py -%PYTHON% -m coverage report -m"
-
-  # upload coverage stats to codecov.io
-  # coverage must be called manually
-  # codecov token is stored in appveyor settings
-  - "py -%PYTHON% -m coverage xml"
-  - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
+  # # show coverage stats
+  # - "py -%PYTHON% -m coverage report -m"
+  #
+  # # upload coverage stats to codecov.io
+  # # coverage must be called manually
+  # # codecov token is stored in appveyor settings
+  # - "py -%PYTHON% -m coverage xml"
+  # - "py -%PYTHON% -m codecov -X gcov --file coverage.xml"
