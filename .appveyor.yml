@@ -37,6 +37,8 @@ for:
       # check current python version
       - "python --version"
 
+      - "pip cache info"
+
     install:
       # the features used in setup.cfg require at decent version of setuptools
       - "python -m pip install --upgrade \"setuptools>=40.0\""
