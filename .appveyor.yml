@@ -37,7 +37,7 @@ for:
       # check current python version
       - "python --version"
 
-      - "pip cache info"
+      - "python -m pip cache info"
 
     install:
       # the features used in setup.cfg require at decent version of setuptools
