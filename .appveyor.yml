@@ -23,7 +23,7 @@ environment:
 # enable cache for Python dependencies
 cache:
   - "%LOCALAPPDATA%\\pip\\Cache"
-  - "$HOME/.cache/pip/wheels"
+  - "$HOME/.cache/pip"
 
 for:
   - matrix:
