@@ -20,15 +20,14 @@ environment:
     - PYTHON: "3.8"
     - PYTHON: "3.9"
 
-# enable cache for Python dependencies
-cache:
-  - "%LOCALAPPDATA%\\pip\\Cache"
-  - "$HOME/.cache/pip"
-
 for:
   - matrix:
       only:
         - image: Ubuntu
+
+    cache:
+      # enable cache for Python dependencies
+      - "$HOME/.cache/pip"
 
     init:
       # load virtual env
@@ -36,8 +35,6 @@ for:
 
       # check current python version
       - "python --version"
-
-      - "python -m pip cache info"
 
     install:
       # the features used in setup.cfg require at decent version of setuptools
@@ -66,6 +63,10 @@ for:
   - matrix:
       only:
         - image: Visual Studio 2019
+
+    cache:
+      # enable cache for Python dependencies
+      - "%LOCALAPPDATA%\\pip\\Cache"
 
     init:
       # check current python version
