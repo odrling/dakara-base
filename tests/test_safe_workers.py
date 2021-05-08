@@ -3,7 +3,7 @@ from queue import Queue
 from threading import Event, Timer
 from time import sleep
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from dakara_base.safe_workers import (
     BaseSafeThread,
