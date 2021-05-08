@@ -3,7 +3,7 @@ from queue import Queue
 from threading import Event, Timer
 from time import sleep
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from dakara_base.safe_workers import (
     BaseSafeThread,
@@ -568,16 +568,19 @@ class RunnerTestCase(BaseTestCase):
         self.assertFalse(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
 
-        with patch.object(Event, "wait") as mocked_wait:
-            mocked_wait.side_effect = KeyboardInterrupt()
+        # modify stop event wait method
+        self.runner.stop.wait = MagicMock()
+        self.runner.stop.wait.side_effect = KeyboardInterrupt
 
-            # call the method
-            self.runner.run_safe(self.WorkerNormal)
+        # call the method
+        self.runner.run_safe(self.WorkerNormal)
 
         # post assertions
         self.assertTrue(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
-        mocked_wait.assert_called_once()
+
+        # assert stop event wait method was called
+        self.runner.stop.wait.assert_called_once()
 
     def test_run_safe_error(self):
         """Test a run with an error
