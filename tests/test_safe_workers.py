@@ -535,50 +535,31 @@ class RunnerTestCase(BaseTestCase):
     internal eror.
     """
 
-    class WorkerError(Worker):
+    class WorkerNormal(Worker):
         """Dummy worker class
         """
 
         def init_worker(self):
-            """Initialize the worker
-            """
             self.thread = self.create_thread(target=self.test)
 
         def test(self):
-            """Raise an error
-            """
-            raise MyError("test error")
+            pass
 
-    @staticmethod
-    def get_worker_ready():
-        """Get a worker connected to an event
-
-        This will be used for tests that produce side effects.
+    class WorkerError(Worker):
+        """Dummy worker class that will fail
         """
-        ready = Event()
 
-        class WorkerReady(Worker):
-            """Dummy worker class
-            """
+        def init_worker(self):
+            self.thread = self.create_thread(target=self.test)
 
-            def init_worker(self):
-                """Initialize the worker
-                """
-                self.thread = self.create_thread(target=self.test)
-
-            def test(self):
-                """Signal to stop
-                """
-                ready.set()
-                return
-
-        return ready, WorkerReady
+        def test(self):
+            raise MyError("test error")
 
     def setUp(self):
         # create class to test
         self.runner = Runner()
 
-    def test_run_interrupt(self):
+    def test_run_safe_interrupt(self):
         """Test a run with an interruption by KeyboardInterrupt exception
 
         The run should end with a set stop event and an empty errors queue.
@@ -587,21 +568,18 @@ class RunnerTestCase(BaseTestCase):
         self.assertFalse(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
 
-        # get the class
-        ready, WorkerReady = self.get_worker_ready()
-
         with patch.object(Event, "wait") as mocked_wait:
             mocked_wait.side_effect = KeyboardInterrupt()
 
             # call the method
-            self.runner.run_safe(WorkerReady)
+            self.runner.run_safe(self.WorkerNormal)
 
         # post assertions
         self.assertTrue(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
         mocked_wait.assert_called_once()
 
-    def test_run_error(self):
+    def test_run_safe_error(self):
         """Test a run with an error
 
         The run should raise a MyError, end with a set stop event and an
