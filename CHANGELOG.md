@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Removed
+
+- Dropped Python 3.5 support.
+
 ## 1.3.0 - 2021-04-10
 
 ### Changed

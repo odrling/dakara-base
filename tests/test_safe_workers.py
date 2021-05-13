@@ -1,11 +1,9 @@
 from contextlib import contextmanager
 from queue import Queue
-from threading import Event, Timer, Thread
+from threading import Event, Timer
 from time import sleep
-from unittest import TestCase, skipIf
-import os
-import signal
-import sys
+from unittest import TestCase
+from unittest.mock import MagicMock
 
 from dakara_base.safe_workers import (
     BaseSafeThread,
@@ -22,7 +20,7 @@ from dakara_base.safe_workers import (
 )
 
 
-class TestError(Exception):
+class MyError(Exception):
     """Dummy error class
     """
 
@@ -46,9 +44,9 @@ class BaseTestCase(TestCase):
         return
 
     def function_error(self):
-        """Function that raises a TestError
+        """Function that raises a MyError
         """
-        raise TestError("test error")
+        raise MyError("test error")
 
     @contextmanager
     def assertNotRaises(self, ExceptionClass):
@@ -117,7 +115,7 @@ class SafeTestCase(BaseTestCase):
         """Test an error function of a worker
 
         Test that an error function does not trigger any error, sets the stop
-        event and puts a TestError in the error queue.
+        event and puts a MyError in the error queue.
         """
         # pre assertions
         self.assertFalse(self.stop.is_set())
@@ -128,14 +126,14 @@ class SafeTestCase(BaseTestCase):
         worker = Worker(self.stop, self.errors)
 
         # call the method
-        with self.assertNotRaises(TestError):
+        with self.assertNotRaises(MyError):
             worker.function_error()
 
         # post assertions
         self.assertTrue(self.stop.is_set())
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertIsInstance(error, MyError)
 
     def test_thread(self):
         """Test a thread
@@ -215,7 +213,7 @@ class SafeThreadTestCase(BaseTestCase):
         """Test an error function
 
         Test that an error function run as a thread does not trigger any error,
-        sets the stop event and puts a TestError in the error queue.
+        sets the stop event and puts a MyError in the error queue.
         """
         # pre assertions
         self.assertFalse(self.stop.is_set())
@@ -225,7 +223,7 @@ class SafeThreadTestCase(BaseTestCase):
         controlled_thread = self.create_controlled_thread(self.function_error)
 
         # run thread
-        with self.assertNotRaises(TestError):
+        with self.assertNotRaises(MyError):
             controlled_thread.start()
             controlled_thread.join()
 
@@ -233,7 +231,7 @@ class SafeThreadTestCase(BaseTestCase):
         self.assertTrue(self.stop.is_set())
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertIsInstance(error, MyError)
 
 
 class SafeTimerTestCase(SafeThreadTestCase):
@@ -281,7 +279,7 @@ class WorkerTestCase(BaseTestCase):
         self.assertTrue(self.errors.empty())
 
         # create and run worker
-        with self.assertRaises(TestError):
+        with self.assertRaises(MyError):
             with Worker(self.stop, self.errors):
                 self.function_error()
 
@@ -323,7 +321,7 @@ class WorkerTestCase(BaseTestCase):
         self.assertTrue(self.errors.empty())
 
         # create and run worker
-        with self.assertNotRaises(TestError):
+        with self.assertNotRaises(MyError):
             with Worker(self.stop, self.errors) as worker:
                 worker.thread = worker.create_thread(target=self.function_error)
                 worker.thread.start()
@@ -333,7 +331,7 @@ class WorkerTestCase(BaseTestCase):
         self.assertTrue(self.stop.is_set())
         self.assertFalse(self.errors.empty())
         _, error, _ = self.errors.get()
-        self.assertIsInstance(error, TestError)
+        self.assertIsInstance(error, MyError)
 
 
 class WorkerSafeTimerTestCase(BaseTestCase):
@@ -537,52 +535,32 @@ class RunnerTestCase(BaseTestCase):
     internal eror.
     """
 
-    class WorkerError(Worker):
+    class WorkerNormal(Worker):
         """Dummy worker class
         """
 
         def init_worker(self):
-            """Initialize the worker
-            """
             self.thread = self.create_thread(target=self.test)
 
         def test(self):
-            """Raise an error
-            """
-            raise TestError("test error")
+            pass
 
-    @staticmethod
-    def get_worker_ready():
-        """Get a worker connected to an event
-
-        This will be used for tests that produce side effects.
+    class WorkerError(Worker):
+        """Dummy worker class that will fail
         """
-        ready = Event()
 
-        class WorkerReady(Worker):
-            """Dummy worker class
-            """
+        def init_worker(self):
+            self.thread = self.create_thread(target=self.test)
 
-            def init_worker(self):
-                """Initialize the worker
-                """
-                self.thread = self.create_thread(target=self.test)
-
-            def test(self):
-                """Signal to stop
-                """
-                ready.set()
-                return
-
-        return ready, WorkerReady
+        def test(self):
+            raise MyError("test error")
 
     def setUp(self):
         # create class to test
         self.runner = Runner()
 
-    @skipIf(os.environ.get("APPVEYOR_CI_ENV", False), "Disabled for Appveyor CI")
-    def test_run_interrupt(self):
-        """Test a run with an interruption by Ctrl+C
+    def test_run_safe_interrupt(self):
+        """Test a run with an interruption by KeyboardInterrupt exception
 
         The run should end with a set stop event and an empty errors queue.
         """
@@ -590,39 +568,24 @@ class RunnerTestCase(BaseTestCase):
         self.assertFalse(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
 
-        # get the class
-        ready, WorkerReady = self.get_worker_ready()
-
-        # prepare the sending of SIGINT to simulate a Ctrl+C
-        def send_ctrl_c():
-            """Simulate the Ctrl+C
-
-            The signal is SIGINT on *NIX and  CTRL_C_EVENT on Windows.
-            """
-            pid = os.getpid()
-            ready.wait()
-            if sys.platform.startswith("win"):
-                os.kill(pid, signal.CTRL_C_EVENT)
-
-            else:
-                os.kill(pid, signal.SIGINT)
-
-        kill_thread = Thread(target=send_ctrl_c)
-        kill_thread.start()
+        # modify stop event wait method
+        self.runner.stop.wait = MagicMock()
+        self.runner.stop.wait.side_effect = KeyboardInterrupt
 
         # call the method
-        with self.assertNotRaises(KeyboardInterrupt):
-            self.runner.run_safe(WorkerReady)
+        self.runner.run_safe(self.WorkerNormal)
 
         # post assertions
         self.assertTrue(self.runner.stop.is_set())
         self.assertTrue(self.runner.errors.empty())
-        self.assertFalse(kill_thread.is_alive())
 
-    def test_run_error(self):
+        # assert stop event wait method was called
+        self.runner.stop.wait.assert_called_once()
+
+    def test_run_safe_error(self):
         """Test a run with an error
 
-        The run should raise a TestError, end with a set stop event and an
+        The run should raise a MyError, end with a set stop event and an
         empty error queue.
         """
         # pre assertions
@@ -630,7 +593,7 @@ class RunnerTestCase(BaseTestCase):
         self.assertTrue(self.runner.errors.empty())
 
         # call the method
-        with self.assertRaises(TestError):
+        with self.assertRaises(MyError):
             self.runner.run_safe(self.WorkerError)
 
         # post assertions
