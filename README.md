@@ -51,7 +51,7 @@ pip install -e ".[tests]"
 
 This installs the normal dependencies of the package plus the dependencies for tests.
 
-### Run tests
+### Tests
 
 Tests are run by [Pytest](https://docs.pytest.org/en/stable/) with:
 
@@ -60,6 +60,14 @@ pytest
 ```
 
 Coverage is checked automatically with [Pytest-cov](https://pypi.org/project/pytest-cov/).
+
+### Imports
+
+Imports are sorted by [isort](https://pycqa.github.io/isort/) with the command:
+
+```sh
+isort .
+```
 
 ### Code style
 
