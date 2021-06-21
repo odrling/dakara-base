@@ -174,6 +174,14 @@ class GetConfigDirectoryTestCase(TestCase):
 
         self.assertEqual(directory, Path("~") / ".config" / "dakara")
 
+    @patch("sys.platform", "darwin")
+    def test_mac(self):
+        """Test to get config directory for Mac
+        """
+        directory = get_config_directory()
+
+        self.assertEqual(directory, Path("~") / "Library" / "Application Support" / "Dakara")
+
     @patch("sys.platform", "win32")
     def test_windows(self):
         """Test to get config directory for Windows

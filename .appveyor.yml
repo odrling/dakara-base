@@ -1,8 +1,8 @@
 version: 1.4.0-dev-{build}
 
 image:
-  - macos
   - Ubuntu
+  - macos
   - Visual Studio 2019
 
 build: false

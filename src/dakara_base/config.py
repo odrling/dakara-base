@@ -143,10 +143,13 @@ def get_config_directory():
         path.Path: path of the Dakara config directory. Value is not expanded,
         so you have to call `.expand()` on the return value.
     """
-    if "linux" in sys.platform:
+    if sys.platform.startswith("linux"):
         return Path("~") / ".config" / "dakara"
 
-    if "win" in sys.platform:
+    if sys.platform.startswith("darwin"):
+        return Path("~") / "Library" / "Application Support" / "Dakara"
+
+    if sys.platform.startswith("win"):
         return Path("$APPDATA") / "Dakara"
 
     raise NotImplementedError(
