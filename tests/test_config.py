@@ -180,7 +180,9 @@ class GetConfigDirectoryTestCase(TestCase):
         """
         directory = get_config_directory()
 
-        self.assertEqual(directory, Path("~") / "Library" / "Application Support" / "Dakara")
+        self.assertEqual(
+            directory, Path("~") / "Library" / "Application Support" / "Dakara"
+        )
 
     @patch("sys.platform", "win32")
     def test_windows(self):
