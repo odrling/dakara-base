@@ -1,6 +1,7 @@
 version: 1.4.0-dev-{build}
 
 image:
+  - macos
   - Ubuntu
   - Visual Studio 2019
 
@@ -24,6 +25,46 @@ for:
   - matrix:
       only:
         - image: Ubuntu
+
+    cache:
+      # enable cache for Python dependencies
+      - "$HOME/.cache/pip"
+
+    init:
+      # load virtual env
+      - "source $HOME/venv$PYTHON/bin/activate"
+
+      # check current python version
+      - "python --version"
+
+    install:
+      # the features used in setup.cfg require a recent enough version of setuptools
+      - "python -m pip install --upgrade \"setuptools>=40.0\""
+
+      # install dependencies for test
+      - "python -m pip install -e \".[tests]\""
+
+    test_script:
+      # run tests
+      - "python -m coverage run -m pytest -v"
+
+      # run code formatting tests
+      - "python -m black . --check"
+      - "python -m flake8"
+
+    after_test:
+      # show coverage stats
+      - "python -m coverage report -m"
+
+      # upload coverage stats to codecov.io
+      # codecov token is stored in appveyor settings
+      - "python -m coverage xml"
+      - "python -m codecov -X gcov --file coverage.xml"
+
+  - matrix:
+      only:
+        - image: macos
+        - PYTHON: "3.9"
 
     cache:
       # enable cache for Python dependencies
