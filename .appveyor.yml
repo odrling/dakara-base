@@ -64,11 +64,11 @@ for:
   - matrix:
       only:
         - image: macos
-        - PYTHON: "3.9"
+          PYTHON: "3.9"
 
     cache:
       # enable cache for Python dependencies
-      - "$HOME/.cache/pip"
+      - "$HOME/Library/Caches/pip"
 
     init:
       # load virtual env
