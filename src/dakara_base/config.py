@@ -35,6 +35,7 @@ the configuration directory:
 
 
 import logging
+import os
 import sys
 from distutils.util import strtobool
 
@@ -57,6 +58,48 @@ LOG_LEVEL = "INFO"
 
 
 logger = logging.getLogger(__name__)
+
+
+class EnvVarConfig(dict):
+    """This special dict behaves like a regular dictionnary, with the exception
+    that when getting a value, if the requested key exists as an environnment
+    variable, it is returned instead.
+
+
+    >>> EnvVarConfig("prefix", {"key": "val"})
+    """
+
+    def __init__(self, prefix, iterable=None):
+        self.prefix = prefix
+
+        if iterable:
+            iterable = {
+                key: (
+                    EnvVarConfig("{}_{}".format(self.prefix, key), val)
+                    if isinstance(val, dict)
+                    else val
+                )
+                for key, val in iterable.items()
+            }
+
+            super().__init__(iterable)
+
+    def get_value_from_env(self, key):
+        return os.environ.get("{}_{}".format(self.prefix.upper(), key.upper()))
+
+    def __getitem__(self, key):
+        value_from_env = self.get_value_from_env(key)
+        if value_from_env is not None:
+            return value_from_env
+
+        return super().__getitem__(key)
+
+    def get(self, key, *args, **kwargs):
+        value_from_env = self.get_value_from_env(key)
+        if value_from_env is not None:
+            return value_from_env
+
+        return super().get(key, *args, **kwargs)
 
 
 def load_config(config_path, debug, mandatory_keys=None):

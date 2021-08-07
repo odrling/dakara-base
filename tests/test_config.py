@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from path import Path
 from yaml.parser import ParserError
 
 from dakara_base.config import (
+    EnvVarConfig,
     load_config,
     ConfigInvalidError,
     ConfigNotFoundError,
@@ -21,6 +23,52 @@ from dakara_base.config import (
     get_config_file,
     set_loglevel,
 )
+
+
+class EnvVarConfigTestCase(TestCase):
+    """Test the `EnvVarConfig` class
+    """
+
+    def test_return_env_var(self):
+        """Test return var env when present
+        """
+
+        config = EnvVarConfig("DAKARA")
+
+        # Add value
+        config["server"] = "url"
+
+        # Value can be accessed like a regular dict
+        self.assertEqual(config.get("server"), "url")
+        self.assertEqual(config["server"], "url")
+
+        # Add a environment variable with the same name
+        with patch.dict(os.environ, {"DAKARA_SERVER": "url_from_env"}, clear=True):
+            # return value from environment variable
+            self.assertEqual(config.get("server"), "url_from_env")
+            self.assertEqual(config["server"], "url_from_env")
+
+    def test_create_from_dict(self):
+        """Test the creation from existing dict
+        """
+
+        # Create nested dict
+        config_raw = {
+            "server": {"url": "http://a.b", "token": "gdfgdg"},
+            "player": {"config1": "conf", "value": "testvalue"},
+        }
+
+        config = EnvVarConfig("DAKARA", config_raw)
+
+        # Check child dicts were also converted
+        self.assertIsInstance(config["server"], EnvVarConfig)
+        self.assertIsInstance(config["player"], EnvVarConfig)
+
+        # Add a environment variable corresponding to the url param
+        with patch.dict(os.environ, {"DAKARA_SERVER_URL": "url_from_env"}, clear=True):
+            # return value from environment variable
+            self.assertEqual(config.get("server").get("url"), "url_from_env")
+            self.assertEqual(config["server"]["url"], "url_from_env")
 
 
 class LoadConfigTestCase(TestCase):
