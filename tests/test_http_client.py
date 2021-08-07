@@ -106,7 +106,8 @@ class HTTPClientTestCase(TestCase):
 
         # assert the error
         self.assertEqual(
-            str(error.exception), "Missing parameter in server config: 'login'"
+            str(error.exception),
+            "You have to specify 'token' or 'login' and 'password' in config file",
         )
 
     @patch("dakara_base.http_client.requests.post", autospec=True)
