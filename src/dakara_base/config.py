@@ -70,16 +70,23 @@ class EnvVarConfig(dict):
     that when getting a value, if the requested key exists as an environment
     variable, it is returned instead.
 
-    The looked up value in environment is prefixed and made upper-case.
+    The looked up variable in environment is prefixed and made upper-case.
 
-    >>> conf = EnvVarConfig("prefix", {"key": "val"})
+    >>> conf = EnvVarConfig("prefix", {"key1": "foo", "key2": "bar"})
     >>> conf
-    ... {"key": "val"}
-    >>> conf.get("key")
-    ... "val"
-    >>> # let's say PREFIX_KEY2 is in environment variables with value "val2"
+    ... {"key1": "foo", "key2": "bar"}
+    >>> conf.get("key1")
+    ... "foo"
+    >>> # let's say PREFIX_KEY2 is in environment variables with value "spam"
     >>> conf.get("key2")
-    ... "val2"
+    ... "spam"
+
+    Values of nested EnvVarConfig objects will have accumulated prefixes:
+
+    >>> conf = EnvVarConfig("prefix", {"sub": {"key": "foo"}})
+    >>> # let's say PREFIX_SUB_KEY is in environment variables with value "bar"
+    >>> cong.get("sub").get("key")
+    ... "bar"
 
     Args:
         prefix (str): Prefix to use when looking for value in environment
@@ -123,13 +130,34 @@ class EnvVarConfig(dict):
 
         return super().__getitem__(key)
 
-    def get(self, key, *args, **kwargs):
-        # try to get value from environment
+    def get(self, key, default=None):
+        """Return the value for key.
+
+        If a default value is provided, it will determine the class of the
+        returned value when getting it from the environment variables.
+
+        Args:
+            key (any): Key to retreive.
+            default (any): Default value if the key cannot be found.
+
+        Returns:
+            any: Value. If `default` was provided, it will be of the same type.
+        """
+        # guess cast from default value
+        cast = str
+        if default is not None:
+            cast = type(default)
+
+        # adapt casting function if necessary
+        if cast is bool:
+            cast = strtobool
+
+        # try to get value from environment and cast it
         value_from_env = self.get_value_from_env(key)
         if value_from_env is not None:
-            return value_from_env
+            return cast(value_from_env)
 
-        return super().get(key, *args, **kwargs)
+        return super().get(key, default)
 
 
 def load_config(config_path, debug, mandatory_keys=None):

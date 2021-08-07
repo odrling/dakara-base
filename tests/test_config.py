@@ -33,7 +33,7 @@ class EnvVarConfigTestCase(TestCase):
         """Test return var env when present
         """
 
-        config = EnvVarConfig("DAKARA")
+        config = EnvVarConfig("dakara")
 
         # Add value
         config["server"] = "url"
@@ -69,6 +69,26 @@ class EnvVarConfigTestCase(TestCase):
             # return value from environment variable
             self.assertEqual(config.get("server").get("url"), "url_from_env")
             self.assertEqual(config["server"]["url"], "url_from_env")
+
+    def test_cast(self):
+        """Test to cast values when getting them
+        """
+        config = EnvVarConfig("DAKARA")
+
+        with patch.dict(
+            os.environ,
+            {
+                "DAKARA_BOOL": "yes",
+                "DAKARA_INT": "42",
+                "DAKARA_FLOAT": "3.1416",
+                "DAKARA_STR": "abcd",
+            },
+            clear=True,
+        ):
+            self.assertTrue(config.get("bool", False))
+            self.assertEqual(config.get("int", 1), 42)
+            self.assertAlmostEqual(config.get("float", 1.1), 3.1416)
+            self.assertEqual(config.get("str"), "abcd")
 
 
 class LoadConfigTestCase(TestCase):
