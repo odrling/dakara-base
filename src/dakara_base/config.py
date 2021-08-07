@@ -6,6 +6,9 @@ config file:
 >>> from path import Path
 >>> config = load_config(Path("path/to/file.yaml"), debug=True)
 
+The config object will lookup for values in environment variables and in the
+config file.
+
 The module has two functions to configure loaders: `create_logger`, which
 installs the logger using coloredlogs, and `set_loglevel`, which sets the
 loglevel of the logger according to the config. Usually, you call the first one
@@ -61,18 +64,34 @@ logger = logging.getLogger(__name__)
 
 
 class EnvVarConfig(dict):
-    """This special dict behaves like a regular dictionnary, with the exception
-    that when getting a value, if the requested key exists as an environnment
+    """Dictionary with environment variable lookup.
+
+    This special dict behaves like a regular dictionnary, with the exception
+    that when getting a value, if the requested key exists as an environment
     variable, it is returned instead.
 
+    The looked up value in environment is prefixed and made upper-case.
 
-    >>> EnvVarConfig("prefix", {"key": "val"})
+    >>> conf = EnvVarConfig("prefix", {"key": "val"})
+    >>> conf
+    ... {"key": "val"}
+    >>> conf.get("key")
+    ... "val"
+    >>> # let's say PREFIX_KEY2 is in environment variables with value "val2"
+    >>> conf.get("key2")
+    ... "val2"
+
+    Args:
+        prefix (str): Prefix to use when looking for value in environment
+            variables.
+        iterable (iterable): Values to store.
     """
 
     def __init__(self, prefix, iterable=None):
         self.prefix = prefix
 
         if iterable:
+            # recursively convert dictionaries into EnvVarConfig objects
             iterable = {
                 key: (
                     EnvVarConfig("{}_{}".format(self.prefix, key), val)
@@ -82,12 +101,22 @@ class EnvVarConfig(dict):
                 for key, val in iterable.items()
             }
 
+            # create values in object
             super().__init__(iterable)
 
     def get_value_from_env(self, key):
+        """Get the value from prefixed upper case environment variable.
+
+        Args:
+            key (str): Name of the variable without prefix.
+
+        Returns:
+            str: Value from environment variable or None if not found.
+        """
         return os.environ.get("{}_{}".format(self.prefix.upper(), key.upper()))
 
     def __getitem__(self, key):
+        # try to get value from environment
         value_from_env = self.get_value_from_env(key)
         if value_from_env is not None:
             return value_from_env
@@ -95,6 +124,7 @@ class EnvVarConfig(dict):
         return super().__getitem__(key)
 
     def get(self, key, *args, **kwargs):
+        # try to get value from environment
         value_from_env = self.get_value_from_env(key)
         if value_from_env is not None:
             return value_from_env
