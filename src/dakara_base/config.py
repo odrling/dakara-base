@@ -184,7 +184,7 @@ def load_config(config_path, debug, mandatory_keys=None):
     try:
         with config_path.open() as file:
             try:
-                config = yaml.load(file, Loader=yaml.Loader)
+                config = EnvVarConfig("DAKARA", yaml.load(file, Loader=yaml.Loader))
 
             except yaml.parser.ParserError as error:
                 raise ConfigParseError("Unable to parse config file") from error

@@ -157,6 +157,17 @@ class LoadConfigTestCase(TestCase):
                 ):
                     load_config(Path(file), False, ["not-present"])
 
+    def test_config_env(self):
+        """Test to load config and get value from environment
+        """
+        with self.assertLogs("dakara_base.config", "DEBUG"):
+            with path("tests.resources", "config.yaml") as file:
+                config = load_config(Path(file), False)
+
+        self.assertNotEqual(config.get("key").get("subkey"), "myvalue")
+        with patch.dict(os.environ, {"DAKARA_KEY_SUBKEY": "myvalue"}, clear=True):
+            self.assertEqual(config.get("key").get("subkey"), "myvalue")
+
 
 @patch("dakara_base.config.LOG_FORMAT", "my format")
 @patch("dakara_base.config.LOG_LEVEL", "my level")
