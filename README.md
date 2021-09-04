@@ -33,66 +33,6 @@ If you have downloaded the repo, you can install the package directly with:
 pip install .
 ```
 
-## Developpment
+## Development
 
-### Install dependencies
-
-Please ensure you have a recent enough version of `setuptools`:
-
-```sh
-pip install --upgrade "setuptools>=40.0"
-```
-
-Install the dependencies with:
-
-```sh
-pip install -e ".[tests]"
-```
-
-This installs the normal dependencies of the package plus the dependencies for tests.
-
-### Tests
-
-Tests are run by [Pytest](https://docs.pytest.org/en/stable/) with:
-
-```sh
-pytest
-```
-
-Coverage is checked automatically with [Pytest-cov](https://pypi.org/project/pytest-cov/).
-
-### Imports
-
-Imports are sorted by [isort](https://pycqa.github.io/isort/) with the command:
-
-```sh
-isort .
-```
-
-### Code style
-
-The code follows the [PEP8](https://www.python.org/dev/peps/pep-0008/) style guide (88 chars per line).
-Quality of code is checked with [Flake8](https://pypi.org/project/flake8/):
-
-```sh
-flake8
-```
-
-Style is enforced using [Black](https://github.com/ambv/black):
-
-```sh
-black .
-```
-
-You need to call Black before committing changes.
-You may want to configure your editor to call it automatically.
-Additionnal checking can be manually performed with [Pylint](https://www.pylint.org/).
-
-### Hooks
-
-Pre-commit hooks allow to perform checks before commiting changes.
-They are managed with [Pre-commit](https://pre-commit.com/), use the following command to install them:
-
-```sh
-pre-commit install
-```
+Please read the [developers documentation](CONTRIBUTING.md).
