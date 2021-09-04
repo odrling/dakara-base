@@ -40,6 +40,7 @@ the configuration directory:
 import logging
 import os
 import sys
+from collections import UserDict
 from distutils.util import strtobool
 
 import coloredlogs
@@ -63,7 +64,7 @@ LOG_LEVEL = "INFO"
 logger = logging.getLogger(__name__)
 
 
-class EnvVarConfig(dict):
+class EnvVarConfig(UserDict):
     """Dictionary with environment variable lookup.
 
     This special dict behaves like a regular dictionnary, with the exception
@@ -108,8 +109,8 @@ class EnvVarConfig(dict):
                 for key, val in iterable.items()
             }
 
-            # create values in object
-            super().__init__(iterable)
+        # create values in object
+        super().__init__(iterable)
 
     def get_value_from_env(self, key):
         """Get the value from prefixed upper case environment variable.

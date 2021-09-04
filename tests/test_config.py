@@ -104,7 +104,7 @@ class LoadConfigTestCase(TestCase):
                 config = load_config(Path(file), False)
 
         # assert the result
-        self.assertDictEqual(config, {"key": {"subkey": "value"}})
+        self.assertEqual(config["key"]["subkey"], "value")
 
         # assert the effect on logs
         self.assertListEqual(
@@ -121,7 +121,7 @@ class LoadConfigTestCase(TestCase):
                 config = load_config(Path(file), True)
 
         # assert the result
-        self.assertDictEqual(config, {"key": {"subkey": "value"}, "loglevel": "DEBUG"})
+        self.assertEqual(config["loglevel"], "DEBUG")
 
     def test_fail_not_found(self):
         """Test to load a not found config file
