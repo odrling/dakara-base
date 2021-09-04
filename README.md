@@ -53,25 +53,13 @@ This installs the normal dependencies of the package plus the dependencies for t
 
 ### Run tests
 
-Tests are run by [Pytest](https://docs.pytest.org/en/stable/) and are simply run by:
+Tests are run by [Pytest](https://docs.pytest.org/en/stable/) with:
 
 ```sh
 pytest
 ```
 
-To check coverage, use the `coverage` command:
-
-```sh
-coverage run setup.py test
-coverage report -m
-```
-
-Or directly with:
-
-```sh
-coverage run -m pytest
-coverage report -m
-```
+Coverage is checked automatically with [Pytest-cov](https://pypi.org/project/pytest-cov/).
 
 ### Code style
 
