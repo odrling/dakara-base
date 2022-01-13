@@ -321,6 +321,21 @@ class HTTPClientTestCase(TestCase):
         )
 
     @patch("dakara_base.http_client.requests.post", autospec=True)
+    def test_authenticate_token_present(self, mocked_post):
+        """Test to bypass authentication with already present token."""
+        # create token
+        self.client.token = self.token
+
+        # call the method
+        self.client.authenticate()
+
+        # call assertions
+        mocked_post.assert_not_called()
+
+        # post assertions
+        self.assertEqual(self.client.token, self.token)
+
+    @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_authenticate_error_network(self, mocked_post):
         """Test a network error when authenticating."""
         # mock the response of the server
