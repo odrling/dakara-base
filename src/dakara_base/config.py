@@ -38,7 +38,6 @@ the configuration directory:
 
 
 import logging
-import os
 import sys
 from collections import UserDict
 from distutils.util import strtobool
@@ -46,6 +45,7 @@ from distutils.util import strtobool
 import coloredlogs
 import progressbar
 import yaml
+from environs import Env, EnvError
 from path import Path
 
 try:
@@ -61,6 +61,14 @@ LOG_LEVEL = "INFO"
 
 
 logger = logging.getLogger(__name__)
+
+
+class AutoEnv(Env):
+    """Environment variable reader with an automatic method."""
+
+    def auto(self, type, *args, **kwargs):
+        type_str = type.__name__
+        return getattr(self, type_str)(*args, **kwargs)
 
 
 class EnvVarConfig(UserDict):
@@ -107,6 +115,7 @@ class EnvVarConfig(UserDict):
 
     def __init__(self, prefix, iterable=None):
         self.prefix = prefix
+        self.env = AutoEnv()
 
         if iterable:
             # recursively convert dictionaries into EnvVarConfig objects
@@ -122,7 +131,7 @@ class EnvVarConfig(UserDict):
         # create values in object
         super().__init__(iterable)
 
-    def get_value_from_env(self, key):
+    def get_value_from_env(self, key, type=None):
         """Get the value from prefixed upper case environment variable.
 
         Args:
@@ -131,15 +140,21 @@ class EnvVarConfig(UserDict):
         Returns:
             str: Value from environment variable or None if not found.
         """
-        return os.environ.get("{}_{}".format(self.prefix.upper(), key.upper()))
+        with self.env.prefixed("{}_".format(self.prefix.upper())):
+            # use type if provided
+            if type:
+                return self.env.auto(type, key.upper())
+
+            # fallback to default behavior
+            return self.env(key.upper())
 
     def __getitem__(self, key):
         # try to get value from environment
-        value_from_env = self.get_value_from_env(key)
-        if value_from_env is not None:
-            return value_from_env
+        try:
+            return self.get_value_from_env(key)
 
-        return super().__getitem__(key)
+        except EnvError:
+            return super().__getitem__(key)
 
     def get(self, key, default=None):
         """Return the value for key.
@@ -159,16 +174,12 @@ class EnvVarConfig(UserDict):
         if default is not None:
             cast = type(default)
 
-        # adapt casting function if necessary
-        if cast is bool:
-            cast = strtobool
+        # get value from environment, then from dict
+        try:
+            return self.get_value_from_env(key, cast)
 
-        # try to get value from environment and cast it
-        value_from_env = self.get_value_from_env(key)
-        if value_from_env is not None:
-            return cast(value_from_env)
-
-        return super().get(key, default)
+        except EnvError:
+            return super().get(key, default)
 
 
 def load_config(config_path, debug, mandatory_keys=None):

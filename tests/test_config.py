@@ -8,10 +8,12 @@ try:
 except ImportError:
     from importlib_resources import path
 
+from environs import Env
 from path import Path
 from yaml.parser import ParserError
 
 from dakara_base.config import (
+    AutoEnv,
     ConfigInvalidError,
     ConfigNotFoundError,
     ConfigParseError,
@@ -23,6 +25,45 @@ from dakara_base.config import (
     load_config,
     set_loglevel,
 )
+
+
+class AutoEnvTestCase(TestCase):
+    """Test the `AutoEnv` class."""
+
+    def test_auto(self):
+        """Test to parse some valid types."""
+        env = AutoEnv()
+
+        with patch.object(Env, "int") as mocked_int:
+            env.auto(int, "aaa")
+            mocked_int.assert_called_with("aaa")
+
+        with patch.object(Env, "bool") as mocked_bool:
+            env.auto(bool, "aaa")
+            mocked_bool.assert_called_with("aaa")
+
+        with patch.object(Env, "float") as mocked_float:
+            env.auto(float, "aaa")
+            mocked_float.assert_called_with("aaa")
+
+        with patch.object(Env, "list") as mocked_list:
+            env.auto(list, "aaa")
+            mocked_list.assert_called_with("aaa")
+
+    def test_auto_invalid(self):
+        """Test to parse an invalid types."""
+        env = AutoEnv()
+
+        with self.assertRaises(AttributeError):
+            env.auto(type(None), "aaa")
+
+    def test_get(self):
+        """Test to get a value."""
+        env = AutoEnv()
+
+        with patch.dict(os.environ, {"PREFIX_AAA": "my_val"}, clear=True):
+            with env.prefixed("PREFIX_"):
+                self.assertEqual(env.auto(str, "AAA"), "my_val")
 
 
 class EnvVarConfigTestCase(TestCase):
@@ -78,6 +119,7 @@ class EnvVarConfigTestCase(TestCase):
                 "DAKARA_INT": "42",
                 "DAKARA_FLOAT": "3.1416",
                 "DAKARA_STR": "abcd",
+                "DAKARA_LIST": "item1,item2",
             },
             clear=True,
         ):
@@ -85,6 +127,7 @@ class EnvVarConfigTestCase(TestCase):
             self.assertEqual(config.get("int", 1), 42)
             self.assertAlmostEqual(config.get("float", 1.1), 3.1416)
             self.assertEqual(config.get("str"), "abcd")
+            self.assertListEqual(config.get("list", []), ["item1", "item2"])
 
 
 class LoadConfigTestCase(TestCase):
