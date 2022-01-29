@@ -93,14 +93,12 @@ class HTTPClientTestCase(TestCase):
     def test_init_missing_key(self):
         """Test to create object with missing mandatory key."""
         # try to create a client from invalid config
-        with self.assertRaises(ParameterError) as error:
+        with self.assertRaisesRegex(
+            ParameterError,
+            "You have to either specify 'token' or the couple 'login' "
+            "and 'password' in config file",
+        ):
             HTTPClient({"url": self.url}, endpoint_prefix="api/")
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception),
-            "You have to specify 'token' or 'login' and 'password' in config file",
-        )
 
     @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_successful(self, mocked_post):
@@ -147,18 +145,15 @@ class HTTPClientTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
-            with self.assertRaises(ResponseRequestError) as error:
+            with self.assertRaisesRegex(
+                ResponseRequestError, "Error when communicating with the server: error"
+            ):
                 self.client.send_request_raw(
                     "post",
                     "endpoint/",
                     data={"content": "test"},
                     message_on_error="error message",
                 )
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception), "Error when communicating with the server: error"
-        )
 
         # assert the effect on logger
         self.assertListEqual(

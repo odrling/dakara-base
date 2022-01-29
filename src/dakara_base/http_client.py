@@ -93,7 +93,8 @@ class HTTPClient:
 
         if not self.token and not (self.login and self.password):
             raise ParameterError(
-                "You have to specify 'token' or 'login' and 'password' in config file"
+                "You have to either specify 'token' or the couple 'login' "
+                "and 'password' in config file"
             )
 
     def send_request_raw(
