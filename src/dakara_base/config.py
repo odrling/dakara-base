@@ -66,9 +66,9 @@ logger = logging.getLogger(__name__)
 class EnvVarConfig(UserDict):
     """Dictionary with environment variable lookup.
 
-    This special dict behaves like a regular dictionnary, with the exception
-    that when getting a value, if the requested key exists as an environment
-    variable, it is returned instead.
+    An instance of this class behaves like a regular dictionnary, with the
+    exception that when getting a value, if the requested key exists as an
+    environment variable, it is returned instead.
 
     The looked up variable in environment is prefixed and made upper-case.
 
@@ -77,16 +77,27 @@ class EnvVarConfig(UserDict):
     ... {"key1": "foo", "key2": "bar"}
     >>> conf.get("key1")
     ... "foo"
-    >>> # let's say PREFIX_KEY2 is in environment variables with value "spam"
+    >>> # let's say PREFIX_KEY2 is an environment variable with value "spam"
     >>> conf.get("key2")
     ... "spam"
 
     Values of nested EnvVarConfig objects will have accumulated prefixes:
 
     >>> conf = EnvVarConfig("prefix", {"sub": {"key": "foo"}})
-    >>> # let's say PREFIX_SUB_KEY is in environment variables with value "bar"
+    >>> # let's say PREFIX_SUB_KEY is an environment variable with value "bar"
     >>> cong.get("sub").get("key")
     ... "bar"
+
+    By default, the value obtained from the environment is a string. If a
+    default value is provided to `get`, the returned value from the environment
+    will be casted to the type of the default value:
+
+    >>> conf = EnvVarConfig("prefix", {"key": 42})
+    >>> # let's say PREFIX_KEY is an environment variable with value "39"
+    >>> conf.get("key")
+    ... "39"
+    >>> cong.get("key", 0)
+    ... 39
 
     Args:
         prefix (str): Prefix to use when looking for value in environment
