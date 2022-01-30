@@ -32,17 +32,17 @@
 
 ### Added
 
-- `config.EnvVarConfig` object to store config.
-  Config can be loaded from a file.
-  When accessing a value, it is first looked for in environment variables, then in stored values.
+- `config.Config` object to store config.
+  Config can be loaded from a file (once).
+  When accessing a value, it is first searched in environment variables, then in stored values.
 
 ### Changed
 
-- `config.load_config` was integrated in `config.EnvVarConfig` as method `load_file`.
+- `config.load_config` was integrated in `config.Config` as method `load_file`.
   Its different actions were divided:
-  - Loading the config file: `config.EnvVarConfig.load_file`;
-  - Checking mandatory keys: `config.EnvVarConfig.check_mandatory_keys`; and
-  - Setting debug mode: `config.EnvVarConfig.set_debug`.
+  - Loading the config file: `config.Config.load_file`;
+  - Checking mandatory keys: `config.Config.check_mandatory_keys`; and
+  - Setting debug mode: `config.Config.set_debug`.
 
 ### Removed
 

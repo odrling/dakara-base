@@ -14,10 +14,10 @@ from yaml.parser import ParserError
 
 from dakara_base.config import (
     AutoEnv,
+    Config,
     ConfigInvalidError,
     ConfigNotFoundError,
     ConfigParseError,
-    EnvVarConfig,
     create_config_file,
     create_logger,
     get_config_directory,
@@ -65,13 +65,13 @@ class AutoEnvTestCase(TestCase):
                 self.assertEqual(env.auto(str, "AAA"), "my_val")
 
 
-class EnvVarConfigTestCase(TestCase):
-    """Test the `EnvVarConfig` class."""
+class ConfigTestCase(TestCase):
+    """Test the `Config` class."""
 
     def test_return_env_var(self):
         """Test return var env when present."""
 
-        config = EnvVarConfig("dakara")
+        config = Config("dakara")
 
         # Add value
         config["server"] = "url"
@@ -95,11 +95,11 @@ class EnvVarConfigTestCase(TestCase):
             "player": {"config1": "conf", "value": "testvalue"},
         }
 
-        config = EnvVarConfig("DAKARA", config_raw)
+        config = Config("DAKARA", config_raw)
 
         # Check child dicts were also converted
-        self.assertIsInstance(config["server"], EnvVarConfig)
-        self.assertIsInstance(config["player"], EnvVarConfig)
+        self.assertIsInstance(config["server"], Config)
+        self.assertIsInstance(config["player"], Config)
 
         # Add a environment variable corresponding to the url param
         with patch.dict(os.environ, {"DAKARA_SERVER_URL": "url_from_env"}, clear=True):
@@ -109,7 +109,7 @@ class EnvVarConfigTestCase(TestCase):
 
     def test_cast(self):
         """Test to cast values when getting them."""
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
 
         with patch.dict(
             os.environ,
@@ -130,22 +130,22 @@ class EnvVarConfigTestCase(TestCase):
 
     def test_set_debug(self):
         """Test to set debug mode."""
-        config = EnvVarConfig("DAKARA", {"loglevel": "INFO"})
+        config = Config("DAKARA", {"loglevel": "INFO"})
         self.assertNotEqual(config["loglevel"], "DEBUG")
         config.set_debug()
         self.assertEqual(config["loglevel"], "DEBUG")
 
-    @patch.object(EnvVarConfig, "check_mandatory_key")
+    @patch.object(Config, "check_mandatory_key")
     def test_check_madatory_keys(self, mocked_check_mandatory_key):
         """Test to check a list of keys."""
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
         config.check_mandatory_keys(["key"])
 
         mocked_check_mandatory_key.assert_called_once_with("key")
 
     def test_check_madatory_key_missing(self):
         """Test to check config without a required key."""
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
 
         with self.assertRaisesRegex(
             ConfigInvalidError, "Invalid config file, missing 'not-present'"
@@ -154,7 +154,7 @@ class EnvVarConfigTestCase(TestCase):
 
     def test_load_file_success(self):
         """Test to load a config file."""
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG") as logger:
@@ -172,7 +172,7 @@ class EnvVarConfigTestCase(TestCase):
 
     def test_load_file_fail_not_found(self):
         """Test to load a not found config file."""
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
@@ -185,7 +185,7 @@ class EnvVarConfigTestCase(TestCase):
         # mock the call to yaml
         mocked_safe_load.side_effect = ParserError("parser error")
 
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
@@ -197,7 +197,7 @@ class EnvVarConfigTestCase(TestCase):
 
     def test_config_env(self):
         """Test to load config and get value from environment."""
-        config = EnvVarConfig("DAKARA")
+        config = Config("DAKARA")
 
         with self.assertLogs("dakara_base.config", "DEBUG"):
             with path("tests.resources", "config.yaml") as file:

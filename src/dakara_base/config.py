@@ -1,10 +1,10 @@
 """Config helper module.
 
-This module gives the class `EnvVarConfig` that handles the config. It can load
+This module gives the class `Config` that handles the config. It can load
 values from a YAML file and from environment variables:
 
 >>> from path import Path
->>> config = EnvVarConfig("DAKARA")
+>>> config = Config("DAKARA")
 >>> config.load_file(Path("path/to/file.yaml"))
 >>> config.set_debug()
 >>> config.check_mandatory_key("server")
@@ -18,7 +18,7 @@ latter one:
 
 >>> create_logger()
 >>> from path import Path
->>> config = EnvVarConfig("DAKARA")
+>>> config = Config("DAKARA")
 >>> config.load_file(Path("path/to/file.yaml"))
 >>> set_loglevel(config)
 
@@ -73,7 +73,7 @@ class AutoEnv(Env):
         return getattr(self, type_str)(*args, **kwargs)
 
 
-class EnvVarConfig(UserDict):
+class Config(UserDict):
     """Configuration object.
 
     This object behaves similarly to a dictionary. Its values can be populated
@@ -86,13 +86,13 @@ class EnvVarConfig(UserDict):
     would be discarded.
 
     >>> from path import Path
-    >>> conf = EnvVarConfig("prefix")
+    >>> conf = Config("prefix")
     >>> conf.load_file(Path("config.yaml"))
 
     When checking environment variables, the looked up variable name is
     prefixed and made upper-case.
 
-    >>> conf = EnvVarConfig("prefix", {"key1": "foo", "key2": "bar"})
+    >>> conf = Config("prefix", {"key1": "foo", "key2": "bar"})
     >>> conf
     ... {"key1": "foo", "key2": "bar"}
     >>> conf.get("key1")
@@ -101,10 +101,10 @@ class EnvVarConfig(UserDict):
     >>> conf.get("key2")
     ... "spam"
 
-    Values of nested EnvVarConfig objects will have accumulated prefixes
+    Values of nested Config objects will have accumulated prefixes
     (separated by an underscore):
 
-    >>> conf = EnvVarConfig("prefix", {"sub": {"key": "foo"}})
+    >>> conf = Config("prefix", {"sub": {"key": "foo"}})
     >>> # let's say PREFIX_SUB_KEY is an environment variable with value "bar"
     >>> cong.get("sub").get("key")
     ... "bar"
@@ -113,7 +113,7 @@ class EnvVarConfig(UserDict):
     default value is provided to `get`, the returned value from the environment
     will be casted to the type of that default value:
 
-    >>> conf = EnvVarConfig("prefix", {"key": 42})
+    >>> conf = Config("prefix", {"key": 42})
     >>> # let's say PREFIX_KEY is an environment variable with value "39"
     >>> conf.get("key")
     ... "39"
@@ -147,12 +147,12 @@ class EnvVarConfig(UserDict):
     def set_iterable(self, iterable):
         """Set config values from the provided iterable.
 
-        Dictionaries will be converted into EnvVarConfig with a sub-prefix.
+        Dictionaries will be converted into Config with a sub-prefix.
 
         Args:
             iterable (dict): Dictionary of values.
         """
-        # recursively convert dictionaries into EnvVarConfig objects
+        # recursively convert dictionaries into Config objects
         iterable = {
             key: (
                 self.__class__("{}_{}".format(self.prefix, key), val)
@@ -166,9 +166,14 @@ class EnvVarConfig(UserDict):
         self.data.clear()
         self.data.update(iterable)
 
-    def set_debug(self):
-        """Set log level of the config to debug."""
-        self.data["loglevel"] = "DEBUG"
+    def set_debug(self, debug=True):
+        """Set log level of the config to debug.
+
+        Args:
+            debug (bool): If True (default), set log level to "DEBUG".
+        """
+        if debug:
+            self.data["loglevel"] = "DEBUG"
 
     def check_mandatory_keys(self, keys):
         """Check if a list of keys is present in the config.
