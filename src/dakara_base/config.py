@@ -20,22 +20,15 @@ latter one:
 If you use progress bar and logging at the same time, you should call
 `create_logger` with `wrap=True`.
 
-The module has three functions to manage Dakara Project config files. First,
-`get_config_directory` gives the configuration directory according to the
-operating system. Next, `get_config_file` gives the complete path to the config
-file in the configuration directory:
-
->>> config_path = get_config_file("my_config.yaml")
-
-Then, `create_config` copies a given config file stored in module resources to
+The module has one function to manage Dakara Project config files,
+`create_config_file`, that copies a given config file stored in module resources to
 the configuration directory:
 
->>> create_config("module.resources", "my_config.yaml")
+>>> create_config_file("module.resources", "my_config.yaml")
 """
 
 
 import logging
-import sys
 from distutils.util import strtobool
 
 import coloredlogs
@@ -50,11 +43,11 @@ except ImportError:
     from importlib_resources import path
 
 from dakara_base.exceptions import DakaraError
+from dakara_base.directory import directories
 
 
 LOG_FORMAT = "[%(asctime)s] %(name)s %(levelname)s %(message)s"
 LOG_LEVEL = "INFO"
-
 
 logger = logging.getLogger(__name__)
 
@@ -136,27 +129,6 @@ def set_loglevel(config):
     coloredlogs.set_level(loglevel)
 
 
-def get_config_directory():
-    """Returns the Dakara config directory to use for the current OS
-
-    Returns:
-        path.Path: path of the Dakara config directory. Value is not expanded,
-        so you have to call `.expand()` on the return value.
-    """
-    if sys.platform.startswith("linux"):
-        return Path("~") / ".config" / "dakara"
-
-    if sys.platform.startswith("darwin"):
-        return Path("~") / "Library" / "Application Support" / "Dakara"
-
-    if sys.platform.startswith("win"):
-        return Path("$APPDATA") / "Dakara"
-
-    raise NotImplementedError(
-        "This operating system ({}) is not currently supported".format(sys.platform)
-    )
-
-
 def create_config_file(resource, filename, force=False):
     """Create a new config file in user directory
 
@@ -169,7 +141,7 @@ def create_config_file(resource, filename, force=False):
     with path(resource, filename) as file:
         # get the file
         origin = Path(file)
-        destination = get_config_file(filename)
+        destination = directories.user_config_dir / filename
 
         # create directory
         destination.dirname().mkdir_p()
@@ -190,21 +162,6 @@ def create_config_file(resource, filename, force=False):
         # copy file
         origin.copyfile(destination)
         logger.info("Config created in '{}'".format(destination))
-
-
-def get_config_file(filename):
-    """Get path of the config in user directory
-
-    It does not check if the file exists.
-
-    Args:
-        filename (str): name of the config file.
-
-    Returns:
-        path.Path: path to the config file.
-    """
-    directory = get_config_directory().expand()
-    return directory / filename
 
 
 class ConfigError(DakaraError):

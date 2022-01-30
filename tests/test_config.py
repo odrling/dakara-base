@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 
 try:
     from importlib.resources import path
@@ -17,8 +17,6 @@ from dakara_base.config import (
     ConfigParseError,
     create_config_file,
     create_logger,
-    get_config_directory,
-    get_config_file,
     set_loglevel,
 )
 
@@ -162,53 +160,12 @@ class SetLoglevelTestCase(TestCase):
         mocked_set_level.assert_called_with("INFO")
 
 
-class GetConfigDirectoryTestCase(TestCase):
-    """Test the config directory getter
-    """
-
-    @patch("sys.platform", "linux")
-    def test_linux(self):
-        """Test to get config directory for Linux
-        """
-        directory = get_config_directory()
-
-        self.assertEqual(directory, Path("~") / ".config" / "dakara")
-
-    @patch("sys.platform", "darwin")
-    def test_mac(self):
-        """Test to get config directory for Mac
-        """
-        directory = get_config_directory()
-
-        self.assertEqual(
-            directory, Path("~") / "Library" / "Application Support" / "Dakara"
-        )
-
-    @patch("sys.platform", "win32")
-    def test_windows(self):
-        """Test to get config directory for Windows
-        """
-        directory = get_config_directory()
-
-        self.assertEqual(directory, Path("$APPDATA") / "Dakara")
-
-    @patch("sys.platform", "unknown")
-    def test_unknown(self):
-        """Test to get config directory for unknown OS
-        """
-        with self.assertRaisesRegex(
-            NotImplementedError,
-            r"This operating system \(unknown\) is not currently supported",
-        ):
-            get_config_directory()
-
-
 @patch.object(Path, "copyfile")
 @patch.object(Path, "exists")
 @patch.object(Path, "mkdir_p")
 @patch(
-    "dakara_base.config.get_config_file",
-    return_value=Path("path") / "to" / "directory" / "config.yaml",
+    "dakara_base.directory.AppDirsPath.user_config_dir",
+    new_callable=PropertyMock(return_value=Path("path") / "to" / "directory"),
 )
 @patch("dakara_base.config.path",)
 class CreateConfigFileTestCase(TestCase):
@@ -218,7 +175,7 @@ class CreateConfigFileTestCase(TestCase):
     def test_create_empty(
         self,
         mocked_path,
-        mocked_get_config_file,
+        mocked_user_config_dir,
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
@@ -234,7 +191,6 @@ class CreateConfigFileTestCase(TestCase):
 
         # assert the call
         mocked_path.assert_called_with("module.resources", "config.yaml")
-        mocked_get_config_file.assert_called_with("config.yaml")
         mocked_mkdir_p.assert_called_with()
         mocked_exists.assert_called_with()
         mocked_copyfile.assert_called_with(
@@ -256,7 +212,7 @@ class CreateConfigFileTestCase(TestCase):
         self,
         mocked_input,
         mocked_path,
-        mocked_get_config_file,
+        mocked_user_config_dir,
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
@@ -283,7 +239,7 @@ class CreateConfigFileTestCase(TestCase):
         self,
         mocked_input,
         mocked_path,
-        mocked_get_config_file,
+        mocked_user_config_dir,
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
@@ -305,7 +261,7 @@ class CreateConfigFileTestCase(TestCase):
         self,
         mocked_input,
         mocked_path,
-        mocked_get_config_file,
+        mocked_user_config_dir,
         mocked_mkdir_p,
         mocked_exists,
         mocked_copyfile,
@@ -321,18 +277,3 @@ class CreateConfigFileTestCase(TestCase):
         mocked_copyfile.assert_called_with(
             Path("path") / "to" / "directory" / "config.yaml"
         )
-
-
-@patch(
-    "dakara_base.config.get_config_directory",
-    return_value=Path("path") / "to" / "directory",
-)
-class GetConfigFileTestCase(TestCase):
-    """Test the config file getter
-    """
-
-    def test_get(self, mocked_get_config_directory):
-        """Test to get config file
-        """
-        result = get_config_file("config.yaml")
-        self.assertEqual(result, Path("path") / "to" / "directory" / "config.yaml")
