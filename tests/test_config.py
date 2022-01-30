@@ -128,6 +128,13 @@ class ConfigTestCase(TestCase):
             self.assertEqual(config.get("str"), "abcd")
             self.assertListEqual(config.get("list", []), ["item1", "item2"])
 
+    def test_set_iterable_reset(self):
+        """Test setting an iterable erases previous stored data."""
+        config = Config("DAKARA", {"val": True, "spy": True})
+        config.set_iterable({"val": False})
+        self.assertFalse(config["val"])
+        self.assertNotIn("spy", config)
+
     def test_set_debug(self):
         """Test to set debug mode."""
         config = Config("DAKARA", {"loglevel": "INFO"})
