@@ -1,15 +1,16 @@
 """Config helper module.
 
-This module gives a config loader function `load_config` that reads a YAML
-config file:
+This module gives the class `EnvVarConfig` that handles the config. It can load
+values from a YAML file and from environment variables:
 
 >>> from path import Path
->>> config = load_config(Path("path/to/file.yaml"), debug=True)
+>>> config = EnvVarConfig("DAKARA")
+>>> config.load_file(Path("path/to/file.yaml"))
+>>> config.set_debug()
+>>> config.check_mandatory_key("server")
+>>> config.get("server").get("address")
 
-The config object will lookup for values in environment variables and in the
-config file.
-
-The module has two functions to configure loaders: `create_logger`, which
+The module has two functions to configure loggers: `create_logger`, which
 installs the logger using coloredlogs, and `set_loglevel`, which sets the
 loglevel of the logger according to the config. Usually, you call the first one
 before reading the config, as `load_config` needs a logger, then call the
@@ -17,7 +18,8 @@ latter one:
 
 >>> create_logger()
 >>> from path import Path
->>> config = load_config(Path("path/to/file.yaml"), debug=True)
+>>> config = EnvVarConfig("DAKARA")
+>>> config.load_file(Path("path/to/file.yaml"))
 >>> set_loglevel(config)
 
 If you use progress bar and logging at the same time, you should call
@@ -72,13 +74,23 @@ class AutoEnv(Env):
 
 
 class EnvVarConfig(UserDict):
-    """Dictionary with environment variable lookup.
+    """Configuration object.
 
-    An instance of this class behaves like a regular dictionnary, with the
-    exception that when getting a value, if the requested key exists as an
-    environment variable, it is returned instead.
+    This object behaves similarly to a dictionary. Its values can be populated
+    from a file at first. Then, when accessing a value with a key, it first
+    checks if a value with similar name exists as an environment variable. In
+    that case, the environment variable is given, otherwise the stored value is
+    given.
 
-    The looked up variable in environment is prefixed and made upper-case.
+    Values can be loaded from a file, previous values stored in the config
+    would be discarded.
+
+    >>> from path import Path
+    >>> conf = EnvVarConfig("prefix")
+    >>> conf.load_file(Path("config.yaml"))
+
+    When checking environment variables, the looked up variable name is
+    prefixed and made upper-case.
 
     >>> conf = EnvVarConfig("prefix", {"key1": "foo", "key2": "bar"})
     >>> conf
@@ -89,7 +101,8 @@ class EnvVarConfig(UserDict):
     >>> conf.get("key2")
     ... "spam"
 
-    Values of nested EnvVarConfig objects will have accumulated prefixes:
+    Values of nested EnvVarConfig objects will have accumulated prefixes
+    (separated by an underscore):
 
     >>> conf = EnvVarConfig("prefix", {"sub": {"key": "foo"}})
     >>> # let's say PREFIX_SUB_KEY is an environment variable with value "bar"
@@ -98,7 +111,7 @@ class EnvVarConfig(UserDict):
 
     By default, the value obtained from the environment is a string. If a
     default value is provided to `get`, the returned value from the environment
-    will be casted to the type of the default value:
+    will be casted to the type of that default value:
 
     >>> conf = EnvVarConfig("prefix", {"key": 42})
     >>> # let's say PREFIX_KEY is an environment variable with value "39"
@@ -107,6 +120,14 @@ class EnvVarConfig(UserDict):
     >>> cong.get("key", 0)
     ... 39
 
+    You can check `environs.Env` for the supported types. Note stored values
+    are casted from the config file by the YAML library.
+
+    Attributes:
+        prefix (str): Prefix to use when looking for value in environment
+            variables.
+        env (AutoEnv): Environment parser.
+
     Args:
         prefix (str): Prefix to use when looking for value in environment
             variables.
@@ -114,31 +135,96 @@ class EnvVarConfig(UserDict):
     """
 
     def __init__(self, prefix, iterable=None):
+        super().__init__()
+
         self.prefix = prefix
         self.env = AutoEnv()
 
+        # create values in object if any provided
         if iterable:
-            # recursively convert dictionaries into EnvVarConfig objects
-            iterable = {
-                key: (
-                    EnvVarConfig("{}_{}".format(self.prefix, key), val)
-                    if isinstance(val, dict)
-                    else val
-                )
-                for key, val in iterable.items()
-            }
+            self.set_iterable(iterable)
 
-        # create values in object
-        super().__init__(iterable)
+    def set_iterable(self, iterable):
+        """Set config values from the provided iterable.
+
+        Dictionaries will be converted into EnvVarConfig with a sub-prefix.
+
+        Args:
+            iterable (dict): Dictionary of values.
+        """
+        # recursively convert dictionaries into EnvVarConfig objects
+        iterable = {
+            key: (
+                self.__class__("{}_{}".format(self.prefix, key), val)
+                if isinstance(val, dict)
+                else val
+            )
+            for key, val in iterable.items()
+        }
+
+        # reset config data with values from the iterable
+        self.data.clear()
+        self.data.update(iterable)
+
+    def set_debug(self):
+        """Set log level of the config to debug."""
+        self.data["loglevel"] = "DEBUG"
+
+    def check_mandatory_keys(self, keys):
+        """Check if a list of keys is present in the config.
+
+        Args:
+            keys (list of str): Keys that must be present in the config.
+        """
+        for key in keys:
+            self.check_mandatory_key(key)
+
+    def check_mandatory_key(self, key):
+        """Check if a key is present in the config.
+
+        Args:
+            keys (str): Key that must be present in the config.
+
+        Raises:
+            ConfigInvalidError: If the config misses critical sections.
+        """
+        if key not in self.data:
+            raise ConfigInvalidError("Invalid config file, missing '{}'".format(key))
+
+    def load_file(self, config_path):
+        """Load config from a given YAML file.
+
+        Args:
+            config_path (path.Path): Path to the config file.
+
+        Raises:
+            ConfigNotFoundError: If the config file cannot be open.
+            ConfigParseError: If the config cannot be parsed.
+        """
+        logger.info("Loading config file '%s'", config_path)
+
+        # load and parse the file and create config data
+        try:
+            with config_path.open() as file:
+                try:
+                    self.set_iterable(yaml.safe_load(file))
+
+                except yaml.parser.ParserError as error:
+                    raise ConfigParseError("Unable to parse config file") from error
+
+        except FileNotFoundError as error:
+            raise ConfigNotFoundError("No config file found") from error
 
     def get_value_from_env(self, key, type=None):
         """Get the value from prefixed upper case environment variable.
 
         Args:
             key (str): Name of the variable without prefix.
+            type (type): Type of the variable. If not provided, default to
+                string.
 
         Returns:
-            str: Value from environment variable or None if not found.
+            str: Value from environment variable.
         """
         with self.env.prefixed("{}_".format(self.prefix.upper())):
             # use type if provided
@@ -170,7 +256,7 @@ class EnvVarConfig(UserDict):
             any: Value. If `default` was provided, it will be of the same type.
         """
         # guess cast from default value
-        cast = str
+        cast = None
         if default is not None:
             cast = type(default)
 
@@ -180,53 +266,6 @@ class EnvVarConfig(UserDict):
 
         except EnvError:
             return super().get(key, default)
-
-
-def load_config(config_path, debug, mandatory_keys=None):
-    """Load config from given YAML file.
-
-    Args:
-        config_path (path.Path): Path to the config file.
-        debug (bool): Run in debug mode. This creates or overwrites the
-            `loglovel` key of the config to "DEBUG".
-        mandatory_keys (list): List of keys that must be present at the root
-            level of the config.
-
-    Returns:
-        dict: Dictionary of the config.
-
-    Raises:
-        ConfigNotFoundError: If the config file cannot be open.
-        ConfigParseError: If the config cannot be parsed.
-        ConfigInvalidError: If the config misses critical sections.
-    """
-    logger.info("Loading config file '%s'", config_path)
-
-    # load and parse the file
-    try:
-        with config_path.open() as file:
-            try:
-                config = EnvVarConfig("DAKARA", yaml.load(file, Loader=yaml.Loader))
-
-            except yaml.parser.ParserError as error:
-                raise ConfigParseError("Unable to parse config file") from error
-
-    except FileNotFoundError as error:
-        raise ConfigNotFoundError("No config file found") from error
-
-    # if requested check file content
-    if mandatory_keys:
-        for key in mandatory_keys:
-            if key not in config:
-                raise ConfigInvalidError(
-                    "Invalid config file, missing '{}'".format(key)
-                )
-
-    # if debug is set as argument, override the config
-    if debug:
-        config["loglevel"] = "DEBUG"
-
-    return config
 
 
 def create_logger(wrap=False, custom_log_format=None, custom_log_level=None):

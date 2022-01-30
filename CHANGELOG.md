@@ -30,6 +30,20 @@
 
 ## Unreleased
 
+### Added
+
+- `config.EnvVarConfig` object to store config.
+  Config can be loaded from a file.
+  When accessing a value, it is first looked for in environment variables, then in stored values.
+
+### Changed
+
+- `config.load_config` was integrated in `config.EnvVarConfig` as method `load_file`.
+  Its different actions were divided:
+  - Loading the config file: `config.EnvVarConfig.load_file`;
+  - Checking mandatory keys: `config.EnvVarConfig.check_mandatory_keys`; and
+  - Setting debug mode: `config.EnvVarConfig.set_debug`.
+
 ### Removed
 
 - Dropped Python 3.5 support.

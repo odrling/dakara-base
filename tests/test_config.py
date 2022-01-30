@@ -22,7 +22,6 @@ from dakara_base.config import (
     create_logger,
     get_config_directory,
     get_config_file,
-    load_config,
     set_loglevel,
 )
 
@@ -129,16 +128,38 @@ class EnvVarConfigTestCase(TestCase):
             self.assertEqual(config.get("str"), "abcd")
             self.assertListEqual(config.get("list", []), ["item1", "item2"])
 
+    def test_set_debug(self):
+        """Test to set debug mode."""
+        config = EnvVarConfig("DAKARA", {"loglevel": "INFO"})
+        self.assertNotEqual(config["loglevel"], "DEBUG")
+        config.set_debug()
+        self.assertEqual(config["loglevel"], "DEBUG")
 
-class LoadConfigTestCase(TestCase):
-    """Test the `load_config` function."""
+    @patch.object(EnvVarConfig, "check_mandatory_key")
+    def test_check_madatory_keys(self, mocked_check_mandatory_key):
+        """Test to check a list of keys."""
+        config = EnvVarConfig("DAKARA")
+        config.check_mandatory_keys(["key"])
 
-    def test_success(self):
+        mocked_check_mandatory_key.assert_called_once_with("key")
+
+    def test_check_madatory_key_missing(self):
+        """Test to check config without a required key."""
+        config = EnvVarConfig("DAKARA")
+
+        with self.assertRaisesRegex(
+            ConfigInvalidError, "Invalid config file, missing 'not-present'"
+        ):
+            config.check_mandatory_key("not-present")
+
+    def test_load_file_success(self):
         """Test to load a config file."""
+        config = EnvVarConfig("DAKARA")
+
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG") as logger:
             with path("tests.resources", "config.yaml") as file:
-                config = load_config(Path(file), False)
+                config.load_file(Path(file))
 
         # assert the result
         self.assertEqual(config["key"]["subkey"], "value")
@@ -149,28 +170,22 @@ class LoadConfigTestCase(TestCase):
             ["INFO:dakara_base.config:Loading config file '{}'".format(Path(file))],
         )
 
-    def test_success_debug(self):
-        """Test to load the config file with debug mode enabled."""
-        # call the method
-        with self.assertLogs("dakara_base.config", "DEBUG"):
-            with path("tests.resources", "config.yaml") as file:
-                config = load_config(Path(file), True)
-
-        # assert the result
-        self.assertEqual(config["loglevel"], "DEBUG")
-
-    def test_fail_not_found(self):
+    def test_load_file_fail_not_found(self):
         """Test to load a not found config file."""
+        config = EnvVarConfig("DAKARA")
+
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
             with self.assertRaisesRegex(ConfigNotFoundError, "No config file found"):
-                load_config(Path("nowhere"), False)
+                config.load_file(Path("nowhere"))
 
-    @patch("dakara_base.config.yaml.load", autospec=True)
-    def test_load_config_fail_parser_error(self, mocked_load):
+    @patch("dakara_base.config.yaml.safe_load", autospec=True)
+    def test_load_file_fail_parser_error(self, mocked_safe_load):
         """Test to load an invalid config file."""
         # mock the call to yaml
-        mocked_load.side_effect = ParserError("parser error")
+        mocked_safe_load.side_effect = ParserError("parser error")
+
+        config = EnvVarConfig("DAKARA")
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
@@ -178,25 +193,18 @@ class LoadConfigTestCase(TestCase):
                 with self.assertRaisesRegex(
                     ConfigParseError, "Unable to parse config file"
                 ):
-                    load_config(Path(file), False)
-
-    def test_load_config_fail_missing_keys(self):
-        """Test to load a config file without required keys."""
-        # call the method
-        with self.assertLogs("dakara_base.config", "DEBUG"):
-            with path("tests.resources", "config.yaml") as file:
-                with self.assertRaisesRegex(
-                    ConfigInvalidError, "Invalid config file, missing 'not-present'"
-                ):
-                    load_config(Path(file), False, ["not-present"])
+                    config.load_file(Path(file))
 
     def test_config_env(self):
         """Test to load config and get value from environment."""
+        config = EnvVarConfig("DAKARA")
+
         with self.assertLogs("dakara_base.config", "DEBUG"):
             with path("tests.resources", "config.yaml") as file:
-                config = load_config(Path(file), False)
+                config.load_file(Path(file))
 
         self.assertNotEqual(config.get("key").get("subkey"), "myvalue")
+
         with patch.dict(os.environ, {"DAKARA_KEY_SUBKEY": "myvalue"}, clear=True):
             self.assertEqual(config.get("key").get("subkey"), "myvalue")
 
