@@ -90,15 +90,17 @@ class HTTPClientTestCase(TestCase):
         self.assertEqual(self.client.password, self.password)
         self.assertIsNone(self.client.token)
 
-    def test_init_missing_key(self):
+    def test_load_missing_key(self):
         """Test to create object with missing mandatory key."""
         # try to create a client from invalid config
+        client = HTTPClient({"url": self.url}, endpoint_prefix="api/")
+
         with self.assertRaisesRegex(
             ParameterError,
             "You have to either specify 'token' or the couple 'login' "
             "and 'password' in config file",
         ):
-            HTTPClient({"url": self.url}, endpoint_prefix="api/")
+            client.load()
 
     @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_successful(self, mocked_post):

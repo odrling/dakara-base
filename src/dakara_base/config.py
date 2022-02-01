@@ -191,7 +191,7 @@ class Config(UserDict):
             keys (str): Key that must be present in the config.
 
         Raises:
-            ConfigInvalidError: If the config misses critical sections.
+            ConfigInvalidError: If the config misses a critical section.
         """
         if key not in self.data:
             raise ConfigInvalidError("Invalid config file, missing '{}'".format(key))
@@ -211,11 +211,10 @@ class Config(UserDict):
         # load and parse the file and create config data
         try:
             with config_path.open() as file:
-                try:
-                    self.set_iterable(yaml.safe_load(file))
+                self.set_iterable(yaml.safe_load(file))
 
-                except yaml.parser.ParserError as error:
-                    raise ConfigParseError("Unable to parse config file") from error
+        except yaml.parser.ParserError as error:
+            raise ConfigParseError("Unable to parse config file") from error
 
         except FileNotFoundError as error:
             raise ConfigNotFoundError("No config file found") from error

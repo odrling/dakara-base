@@ -43,6 +43,7 @@
   - Loading the config file: `config.Config.load_file`;
   - Checking mandatory keys: `config.Config.check_mandatory_keys`; and
   - Setting debug mode: `config.Config.set_debug`.
+- Checking the validity of parameters of `HTTPClient` is now done in the `load` method.
 
 ### Removed
 

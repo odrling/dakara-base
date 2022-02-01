@@ -91,6 +91,13 @@ class HTTPClient:
         self.login = config.get("login")
         self.password = config.get("password")
 
+    def load(self):
+        """Perform side effect actions.
+
+        Raises:
+            ParameterError: If there is neither a token or a couple
+                login/password set.
+        """
         if not self.token and not (self.login and self.password):
             raise ParameterError(
                 "You have to either specify 'token' or the couple 'login' "
