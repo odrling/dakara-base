@@ -83,19 +83,26 @@ class HTTPClient:
     def __init__(self, config, endpoint_prefix="", mute_raise=False):
         self.mute_raise = mute_raise
 
-        try:
-            # url
-            self.server_url = create_url(**config, path=endpoint_prefix)
+        # url
+        self.server_url = create_url(**config, path=endpoint_prefix)
 
-            # authentication
-            self.token = None
-            self.login = config["login"]
-            self.password = config["password"]
+        # authentication
+        self.token = config.get("token")
+        self.login = config.get("login")
+        self.password = config.get("password")
 
-        except KeyError as error:
+    def load(self):
+        """Perform side effect actions.
+
+        Raises:
+            ParameterError: If there is neither a token or a couple
+                login/password set.
+        """
+        if not self.token and not (self.login and self.password):
             raise ParameterError(
-                "Missing parameter in server config: {}".format(error)
-            ) from error
+                "You have to either specify 'token' or the couple 'login' "
+                "and 'password' in config file"
+            )
 
     def send_request_raw(
         self,
@@ -338,11 +345,17 @@ class HTTPClient:
         The authentication process relies on login/password which gives an
         authentication token. This token is stored in the instance.
 
+        If a token was specified in the config, this function does nothing.
+
         Raises:
             See `send_request_raw`.
             AuthenticationError: If the connection is denied or if any onther
                 error occurs.
         """
+
+        if self.token:
+            return
+
         data = {"login": self.login, "password": self.password}
 
         def on_error(response):

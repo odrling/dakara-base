@@ -1,12 +1,16 @@
 """Config helper module.
 
-This module gives a config loader function `load_config` that reads a YAML
-config file:
+This module gives the class `Config` that handles the config. It can load
+values from a YAML file and from environment variables:
 
 >>> from path import Path
->>> config = load_config(Path("path/to/file.yaml"), debug=True)
+>>> config = Config("DAKARA")
+>>> config.load_file(Path("path/to/file.yaml"))
+>>> config.set_debug()
+>>> config.check_mandatory_key("server")
+>>> config.get("server").get("address")
 
-The module has two functions to configure loaders: `create_logger`, which
+The module has two functions to configure loggers: `create_logger`, which
 installs the logger using coloredlogs, and `set_loglevel`, which sets the
 loglevel of the logger according to the config. Usually, you call the first one
 before reading the config, as `load_config` needs a logger, then call the
@@ -14,7 +18,8 @@ latter one:
 
 >>> create_logger()
 >>> from path import Path
->>> config = load_config(Path("path/to/file.yaml"), debug=True)
+>>> config = Config("DAKARA")
+>>> config.load_file(Path("path/to/file.yaml"))
 >>> set_loglevel(config)
 
 If you use progress bar and logging at the same time, you should call
@@ -36,11 +41,13 @@ the configuration directory:
 
 import logging
 import sys
+from collections import UserDict
 from distutils.util import strtobool
 
 import coloredlogs
 import progressbar
 import yaml
+from environs import Env, EnvError
 from path import Path
 
 try:
@@ -58,51 +65,211 @@ LOG_LEVEL = "INFO"
 logger = logging.getLogger(__name__)
 
 
-def load_config(config_path, debug, mandatory_keys=None):
-    """Load config from given YAML file.
+class AutoEnv(Env):
+    """Environment variable reader with an automatic method."""
+
+    def auto(self, type, *args, **kwargs):
+        type_str = type.__name__
+        return getattr(self, type_str)(*args, **kwargs)
+
+
+class Config(UserDict):
+    """Configuration object.
+
+    This object behaves similarly to a dictionary. Its values can be populated
+    from a file at first. Then, when accessing a value with a key, it first
+    checks if a value with similar name exists as an environment variable. In
+    that case, the environment variable is given, otherwise the stored value is
+    given.
+
+    Values can be loaded from a file, previous values stored in the config
+    would be discarded.
+
+    >>> from path import Path
+    >>> conf = Config("prefix")
+    >>> conf.load_file(Path("config.yaml"))
+
+    When checking environment variables, the looked up variable name is
+    prefixed and made upper-case.
+
+    >>> conf = Config("prefix", {"key1": "foo", "key2": "bar"})
+    >>> conf
+    ... {"key1": "foo", "key2": "bar"}
+    >>> conf.get("key1")
+    ... "foo"
+    >>> # let's say PREFIX_KEY2 is an environment variable with value "spam"
+    >>> conf.get("key2")
+    ... "spam"
+
+    Values of nested Config objects will have accumulated prefixes
+    (separated by an underscore):
+
+    >>> conf = Config("prefix", {"sub": {"key": "foo"}})
+    >>> # let's say PREFIX_SUB_KEY is an environment variable with value "bar"
+    >>> cong.get("sub").get("key")
+    ... "bar"
+
+    By default, the value obtained from the environment is a string. If a
+    default value is provided to `get`, the returned value from the environment
+    will be casted to the type of that default value:
+
+    >>> conf = Config("prefix", {"key": 42})
+    >>> # let's say PREFIX_KEY is an environment variable with value "39"
+    >>> conf.get("key")
+    ... "39"
+    >>> cong.get("key", 0)
+    ... 39
+
+    You can check `environs.Env` for the supported types. Note stored values
+    are casted from the config file by the YAML library.
+
+    Attributes:
+        prefix (str): Prefix to use when looking for value in environment
+            variables.
+        env (AutoEnv): Environment parser.
 
     Args:
-        config_path (path.Path): Path to the config file.
-        debug (bool): Run in debug mode. This creates or overwrites the
-            `loglovel` key of the config to "DEBUG".
-        mandatory_keys (list): List of keys that must be present at the root
-            level of the config.
-
-    Returns:
-        dict: Dictionary of the config.
-
-    Raises:
-        ConfigNotFoundError: If the config file cannot be open.
-        ConfigParseError: If the config cannot be parsed.
-        ConfigInvalidError: If the config misses critical sections.
+        prefix (str): Prefix to use when looking for value in environment
+            variables.
+        iterable (iterable): Values to store.
     """
-    logger.info("Loading config file '%s'", config_path)
 
-    # load and parse the file
-    try:
-        with config_path.open() as file:
-            try:
-                config = yaml.load(file, Loader=yaml.Loader)
+    def __init__(self, prefix, iterable=None):
+        super().__init__()
 
-            except yaml.parser.ParserError as error:
-                raise ConfigParseError("Unable to parse config file") from error
+        self.prefix = prefix
+        self.env = AutoEnv()
 
-    except FileNotFoundError as error:
-        raise ConfigNotFoundError("No config file found") from error
+        # create values in object if any provided
+        if iterable:
+            self.set_iterable(iterable)
 
-    # if requested check file content
-    if mandatory_keys:
-        for key in mandatory_keys:
-            if key not in config:
-                raise ConfigInvalidError(
-                    "Invalid config file, missing '{}'".format(key)
-                )
+    def set_iterable(self, iterable):
+        """Set config values from the provided iterable.
 
-    # if debug is set as argument, override the config
-    if debug:
-        config["loglevel"] = "DEBUG"
+        Dictionaries will be converted into Config with a sub-prefix.
 
-    return config
+        Args:
+            iterable (dict): Dictionary of values.
+        """
+        # recursively convert dictionaries into Config objects
+        iterable = {
+            key: (
+                self.__class__("{}_{}".format(self.prefix, key), val)
+                if isinstance(val, dict)
+                else val
+            )
+            for key, val in iterable.items()
+        }
+
+        # reset config data with values from the iterable
+        self.data.clear()
+        self.data.update(iterable)
+
+    def set_debug(self, debug=True):
+        """Set log level of the config to debug.
+
+        Args:
+            debug (bool): If True (default), set log level to "DEBUG".
+        """
+        if debug:
+            self.data["loglevel"] = "DEBUG"
+
+    def check_mandatory_keys(self, keys):
+        """Check if a list of keys is present in the config.
+
+        Args:
+            keys (list of str): Keys that must be present in the config.
+        """
+        for key in keys:
+            self.check_mandatory_key(key)
+
+    def check_mandatory_key(self, key):
+        """Check if a key is present in the config.
+
+        Args:
+            keys (str): Key that must be present in the config.
+
+        Raises:
+            ConfigInvalidError: If the config misses a critical section.
+        """
+        if key not in self.data:
+            raise ConfigInvalidError("Invalid config file, missing '{}'".format(key))
+
+    def load_file(self, config_path):
+        """Load config from a given YAML file.
+
+        Args:
+            config_path (path.Path): Path to the config file.
+
+        Raises:
+            ConfigNotFoundError: If the config file cannot be open.
+            ConfigParseError: If the config cannot be parsed.
+        """
+        logger.info("Loading config file '%s'", config_path)
+
+        # load and parse the file and create config data
+        try:
+            with config_path.open() as file:
+                self.set_iterable(yaml.safe_load(file))
+
+        except yaml.parser.ParserError as error:
+            raise ConfigParseError("Unable to parse config file") from error
+
+        except FileNotFoundError as error:
+            raise ConfigNotFoundError("No config file found") from error
+
+    def get_value_from_env(self, key, type=None):
+        """Get the value from prefixed upper case environment variable.
+
+        Args:
+            key (str): Name of the variable without prefix.
+            type (type): Type of the variable. If not provided, default to
+                string.
+
+        Returns:
+            str: Value from environment variable.
+        """
+        with self.env.prefixed("{}_".format(self.prefix.upper())):
+            # use type if provided
+            if type:
+                return self.env.auto(type, key.upper())
+
+            # fallback to default behavior
+            return self.env(key.upper())
+
+    def __getitem__(self, key):
+        # try to get value from environment
+        try:
+            return self.get_value_from_env(key)
+
+        except EnvError:
+            return super().__getitem__(key)
+
+    def get(self, key, default=None):
+        """Return the value for key.
+
+        If a default value is provided, it will determine the class of the
+        returned value when getting it from the environment variables.
+
+        Args:
+            key (any): Key to retreive.
+            default (any): Default value if the key cannot be found.
+
+        Returns:
+            any: Value. If `default` was provided, it will be of the same type.
+        """
+        # guess cast from default value
+        cast = None
+        if default is not None:
+            cast = type(default)
+
+        # get value from environment, then from dict
+        try:
+            return self.get_value_from_env(key, cast)
+
+        except EnvError:
+            return super().get(key, default)
 
 
 def create_logger(wrap=False, custom_log_format=None, custom_log_level=None):

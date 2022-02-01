@@ -90,16 +90,17 @@ class HTTPClientTestCase(TestCase):
         self.assertEqual(self.client.password, self.password)
         self.assertIsNone(self.client.token)
 
-    def test_init_missing_key(self):
+    def test_load_missing_key(self):
         """Test to create object with missing mandatory key."""
         # try to create a client from invalid config
-        with self.assertRaises(ParameterError) as error:
-            HTTPClient({"url": self.url}, endpoint_prefix="api/")
+        client = HTTPClient({"url": self.url}, endpoint_prefix="api/")
 
-        # assert the error
-        self.assertEqual(
-            str(error.exception), "Missing parameter in server config: 'login'"
-        )
+        with self.assertRaisesRegex(
+            ParameterError,
+            "You have to either specify 'token' or the couple 'login' "
+            "and 'password' in config file",
+        ):
+            client.load()
 
     @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_send_request_raw_successful(self, mocked_post):
@@ -146,18 +147,15 @@ class HTTPClientTestCase(TestCase):
 
         # call the method
         with self.assertLogs("dakara_base.http_client", "DEBUG") as logger:
-            with self.assertRaises(ResponseRequestError) as error:
+            with self.assertRaisesRegex(
+                ResponseRequestError, "Error when communicating with the server: error"
+            ):
                 self.client.send_request_raw(
                     "post",
                     "endpoint/",
                     data={"content": "test"},
                     message_on_error="error message",
                 )
-
-        # assert the error
-        self.assertEqual(
-            str(error.exception), "Error when communicating with the server: error"
-        )
 
         # assert the effect on logger
         self.assertListEqual(
@@ -318,6 +316,21 @@ class HTTPClientTestCase(TestCase):
                 "DEBUG:dakara_base.http_client:Token: {}".format(self.token),
             ],
         )
+
+    @patch("dakara_base.http_client.requests.post", autospec=True)
+    def test_authenticate_token_present(self, mocked_post):
+        """Test to bypass authentication with already present token."""
+        # create token
+        self.client.token = self.token
+
+        # call the method
+        self.client.authenticate()
+
+        # call assertions
+        mocked_post.assert_not_called()
+
+        # post assertions
+        self.assertEqual(self.client.token, self.token)
 
     @patch("dakara_base.http_client.requests.post", autospec=True)
     def test_authenticate_error_network(self, mocked_post):

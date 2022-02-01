@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -7,10 +8,13 @@ try:
 except ImportError:
     from importlib_resources import path
 
+from environs import Env
 from path import Path
 from yaml.parser import ParserError
 
 from dakara_base.config import (
+    AutoEnv,
+    Config,
     ConfigInvalidError,
     ConfigNotFoundError,
     ConfigParseError,
@@ -18,23 +22,154 @@ from dakara_base.config import (
     create_logger,
     get_config_directory,
     get_config_file,
-    load_config,
     set_loglevel,
 )
 
 
-class LoadConfigTestCase(TestCase):
-    """Test the `load_config` function."""
+class AutoEnvTestCase(TestCase):
+    """Test the `AutoEnv` class."""
 
-    def test_success(self):
+    def test_auto(self):
+        """Test to parse some valid types."""
+        env = AutoEnv()
+
+        with patch.object(Env, "int") as mocked_int:
+            env.auto(int, "aaa")
+            mocked_int.assert_called_with("aaa")
+
+        with patch.object(Env, "bool") as mocked_bool:
+            env.auto(bool, "aaa")
+            mocked_bool.assert_called_with("aaa")
+
+        with patch.object(Env, "float") as mocked_float:
+            env.auto(float, "aaa")
+            mocked_float.assert_called_with("aaa")
+
+        with patch.object(Env, "list") as mocked_list:
+            env.auto(list, "aaa")
+            mocked_list.assert_called_with("aaa")
+
+    def test_auto_invalid(self):
+        """Test to parse an invalid types."""
+        env = AutoEnv()
+
+        with self.assertRaises(AttributeError):
+            env.auto(type(None), "aaa")
+
+    def test_get(self):
+        """Test to get a value."""
+        env = AutoEnv()
+
+        with patch.dict(os.environ, {"PREFIX_AAA": "my_val"}, clear=True):
+            with env.prefixed("PREFIX_"):
+                self.assertEqual(env.auto(str, "AAA"), "my_val")
+
+
+class ConfigTestCase(TestCase):
+    """Test the `Config` class."""
+
+    def test_return_env_var(self):
+        """Test return var env when present."""
+
+        config = Config("dakara")
+
+        # Add value
+        config["server"] = "url"
+
+        # Value can be accessed like a regular dict
+        self.assertEqual(config.get("server"), "url")
+        self.assertEqual(config["server"], "url")
+
+        # Add a environment variable with the same name
+        with patch.dict(os.environ, {"DAKARA_SERVER": "url_from_env"}, clear=True):
+            # return value from environment variable
+            self.assertEqual(config.get("server"), "url_from_env")
+            self.assertEqual(config["server"], "url_from_env")
+
+    def test_create_from_dict(self):
+        """Test the creation from existing dict."""
+
+        # Create nested dict
+        config_raw = {
+            "server": {"url": "http://a.b", "token": "gdfgdg"},
+            "player": {"config1": "conf", "value": "testvalue"},
+        }
+
+        config = Config("DAKARA", config_raw)
+
+        # Check child dicts were also converted
+        self.assertIsInstance(config["server"], Config)
+        self.assertIsInstance(config["player"], Config)
+
+        # Add a environment variable corresponding to the url param
+        with patch.dict(os.environ, {"DAKARA_SERVER_URL": "url_from_env"}, clear=True):
+            # return value from environment variable
+            self.assertEqual(config.get("server").get("url"), "url_from_env")
+            self.assertEqual(config["server"]["url"], "url_from_env")
+
+    def test_cast(self):
+        """Test to cast values when getting them."""
+        config = Config("DAKARA")
+
+        with patch.dict(
+            os.environ,
+            {
+                "DAKARA_BOOL": "yes",
+                "DAKARA_INT": "42",
+                "DAKARA_FLOAT": "3.1416",
+                "DAKARA_STR": "abcd",
+                "DAKARA_LIST": "item1,item2",
+            },
+            clear=True,
+        ):
+            self.assertTrue(config.get("bool", False))
+            self.assertEqual(config.get("int", 1), 42)
+            self.assertAlmostEqual(config.get("float", 1.1), 3.1416)
+            self.assertEqual(config.get("str"), "abcd")
+            self.assertListEqual(config.get("list", []), ["item1", "item2"])
+
+    def test_set_iterable_reset(self):
+        """Test setting an iterable erases previous stored data."""
+        config = Config("DAKARA", {"val": True, "spy": True})
+        config.set_iterable({"val": False})
+        self.assertFalse(config["val"])
+        self.assertNotIn("spy", config)
+
+    def test_set_debug(self):
+        """Test to set debug mode."""
+        config = Config("DAKARA", {"loglevel": "INFO"})
+        self.assertNotEqual(config["loglevel"], "DEBUG")
+        config.set_debug()
+        self.assertEqual(config["loglevel"], "DEBUG")
+
+    @patch.object(Config, "check_mandatory_key")
+    def test_check_madatory_keys(self, mocked_check_mandatory_key):
+        """Test to check a list of keys."""
+        config = Config("DAKARA")
+        config.check_mandatory_keys(["key"])
+
+        mocked_check_mandatory_key.assert_called_once_with("key")
+
+    def test_check_madatory_key_missing(self):
+        """Test to check config without a required key."""
+        config = Config("DAKARA")
+
+        with self.assertRaisesRegex(
+            ConfigInvalidError, "Invalid config file, missing 'not-present'"
+        ):
+            config.check_mandatory_key("not-present")
+
+    def test_load_file_success(self):
         """Test to load a config file."""
+        config = Config("DAKARA")
+
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG") as logger:
             with path("tests.resources", "config.yaml") as file:
-                config = load_config(Path(file), False)
+                config.load_file(Path(file))
 
         # assert the result
-        self.assertDictEqual(config, {"key": {"subkey": "value"}})
+        self.assertEqual(config["key"]["subkey"], "value")
 
         # assert the effect on logs
         self.assertListEqual(
@@ -42,28 +177,22 @@ class LoadConfigTestCase(TestCase):
             ["INFO:dakara_base.config:Loading config file '{}'".format(Path(file))],
         )
 
-    def test_success_debug(self):
-        """Test to load the config file with debug mode enabled."""
-        # call the method
-        with self.assertLogs("dakara_base.config", "DEBUG"):
-            with path("tests.resources", "config.yaml") as file:
-                config = load_config(Path(file), True)
-
-        # assert the result
-        self.assertDictEqual(config, {"key": {"subkey": "value"}, "loglevel": "DEBUG"})
-
-    def test_fail_not_found(self):
+    def test_load_file_fail_not_found(self):
         """Test to load a not found config file."""
+        config = Config("DAKARA")
+
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
             with self.assertRaisesRegex(ConfigNotFoundError, "No config file found"):
-                load_config(Path("nowhere"), False)
+                config.load_file(Path("nowhere"))
 
-    @patch("dakara_base.config.yaml.load", autospec=True)
-    def test_load_config_fail_parser_error(self, mocked_load):
+    @patch("dakara_base.config.yaml.safe_load", autospec=True)
+    def test_load_file_fail_parser_error(self, mocked_safe_load):
         """Test to load an invalid config file."""
         # mock the call to yaml
-        mocked_load.side_effect = ParserError("parser error")
+        mocked_safe_load.side_effect = ParserError("parser error")
+
+        config = Config("DAKARA")
 
         # call the method
         with self.assertLogs("dakara_base.config", "DEBUG"):
@@ -71,17 +200,20 @@ class LoadConfigTestCase(TestCase):
                 with self.assertRaisesRegex(
                     ConfigParseError, "Unable to parse config file"
                 ):
-                    load_config(Path(file), False)
+                    config.load_file(Path(file))
 
-    def test_load_config_fail_missing_keys(self):
-        """Test to load a config file without required keys."""
-        # call the method
+    def test_config_env(self):
+        """Test to load config and get value from environment."""
+        config = Config("DAKARA")
+
         with self.assertLogs("dakara_base.config", "DEBUG"):
             with path("tests.resources", "config.yaml") as file:
-                with self.assertRaisesRegex(
-                    ConfigInvalidError, "Invalid config file, missing 'not-present'"
-                ):
-                    load_config(Path(file), False, ["not-present"])
+                config.load_file(Path(file))
+
+        self.assertNotEqual(config.get("key").get("subkey"), "myvalue")
+
+        with patch.dict(os.environ, {"DAKARA_KEY_SUBKEY": "myvalue"}, clear=True):
+            self.assertEqual(config.get("key").get("subkey"), "myvalue")
 
 
 @patch("dakara_base.config.LOG_FORMAT", "my format")

@@ -11,8 +11,8 @@ This project is a collection of tools and helper modules for the Dakara Project.
 
 ## Modules available
 
-* `config`: a configuration helper that can load an YAML file and manage loggers;
-* `exceptions`: a base class for exceptions;
+* `config`: a helper that manages config and loggers;
+* `exceptions`: a base class for exceptions and exception handlers;
 * `http_client`: an HTTP client dedicated to be used with an API;
 * `progress_bar`: a collection of progress bars;
 * `safe_workers`: a library to facilitate the manipulation of threads;
