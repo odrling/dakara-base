@@ -37,6 +37,7 @@
   When accessing a value, it is first searched in environment variables, then in stored values.
 - Methods that add a message to a raised exception can be generated from `exceptions.generate_exception_handler`.
 - Application directories are available with the object `directory.directories`.
+- Mac OS support.
 
 ### Changed
 
