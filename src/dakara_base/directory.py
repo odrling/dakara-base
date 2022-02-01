@@ -16,7 +16,6 @@ objects:
 from appdirs import AppDirs
 from path import Path
 
-
 APP_NAME = "dakara"
 PROJECT_NAME = "DakaraProject"
 

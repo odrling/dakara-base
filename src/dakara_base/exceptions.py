@@ -1,4 +1,4 @@
-"""Exceptions helper module
+"""Exceptions helper module.
 
 This module defines the base exception class for any project using this
 library. All exception classes should inherit from `DakaraError`:
@@ -38,9 +38,48 @@ interruption of the program:
 ...     logging.critical("Please fill a bug report at <url of bugtracker>")
 ...     exit(128)
 >>> exit(0)
+
+It also devifes `generate_exception_handler` that allows to generate functions which
+will catch an exception, add a custom error message and re-raise it.
 """
+
+from contextlib import contextmanager
 
 
 class DakaraError(Exception):
-    """Basic exception class for the project
+    """Basic exception class for the project."""
+
+
+def generate_exception_handler(exception_class, error_message):
+    """Generate a context manager to take care of given exception.
+
+    It will add a custom message to an expected exception class. The exception
+    is then re-raised.
+
+    >>> class MyError(Exception):
+    >>>     pass
+    >>> handle_my_error = generate_exception_handler(MyError, "extra message")
+    >>> try:
+    >>>     with handle_my_error():
+    >>>         raise MyError("initial message")
+    >>> except MyError as error:
+    >>>     pass
+    >>> str(error)
+    ... "initial message\nextra message"
+
+    Args:
+        exception_class (Exception or list of Exception): Exception class to
+            catch.
+        error_message (str): Error message to display. It will be displayed on
+            the next line after the exception message.
     """
+
+    @contextmanager
+    def function():
+        try:
+            yield None
+
+        except exception_class as error:
+            raise error.__class__("{}\n{}".format(error, error_message)) from error
+
+    return function

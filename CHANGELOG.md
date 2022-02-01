@@ -30,6 +30,22 @@
 
 ## Unreleased
 
+### Added
+
+- `config.Config` object to store config.
+  Config can be loaded from a file (once).
+  When accessing a value, it is first searched in environment variables, then in stored values.
+- Methods that add a message to a raised exception can be generated from `exceptions.generate_exception_handler`.
+
+### Changed
+
+- `config.load_config` was integrated in `config.Config` as method `load_file`.
+  Its different actions were divided:
+  - Loading the config file: `config.Config.load_file`;
+  - Checking mandatory keys: `config.Config.check_mandatory_keys`; and
+  - Setting debug mode: `config.Config.set_debug`.
+- Checking the validity of parameters of `HTTPClient` is now done in the `load` method.
+
 ### Removed
 
 - Dropped Python 3.5 support.
