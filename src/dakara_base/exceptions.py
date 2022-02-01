@@ -29,15 +29,14 @@ def generate_exception_handler(exception_class, error_message):
     is then re-raised.
 
     >>> class MyError(Exception):
-    >>>     pass
+    ...     pass
     >>> handle_my_error = generate_exception_handler(MyError, "extra message")
     >>> try:
-    >>>     with handle_my_error():
-    >>>         raise MyError("initial message")
-    >>> except MyError as error:
-    >>>     pass
-    >>> str(error)
-    ... "initial message\nextra message"
+    ...     with handle_my_error():
+    ...         raise MyError("initial message")
+    ... except MyError as error:
+    ...     pass
+    >>> assert str(error) == "initial message\nextra message"
 
     Args:
         exception_class (Exception or list of Exception): Exception class to
@@ -76,7 +75,9 @@ def handle_all_exceptions(logger, bugtracker_url, debug=False):
             raised.
 
     Yield:
-        dict: Container with the return value, stored in key "value".
+        dict: Container with the return value, stored in key "value". If no
+        error happened, the return value is 0, in case of Ctrl+C, it is 255, in
+        case on known error, it is 1, in case of unknown error, it is 2.
     """
     container = {"value": 0}
 
