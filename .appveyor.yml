@@ -98,6 +98,7 @@ for:
   - matrix:
       only:
         - image: Visual Studio 2019
+          PYTHON: "3.9"
 
     cache:
       # enable cache for Python dependencies
