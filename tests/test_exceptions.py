@@ -38,6 +38,18 @@ class HandleAllExceptionsTestCase(TestCase):
         self.assertEqual(exit_value["value"], 255)
         self.assertListEqual(log.output, ["INFO:keyboard_interrupt:Quit by user"])
 
+    def test_keyboard_interrupt_already_caught(self):
+        """Test a Ctrl+C exit that is caught by the executed block."""
+        logger = logging.getLogger("keyboard_interrupt")
+        with handle_all_exceptions(logger, "url") as exit_value:
+            try:
+                raise KeyboardInterrupt
+
+            except KeyboardInterrupt:
+                pass
+
+        self.assertEqual(exit_value["value"], 0)
+
     def test_known_error(self):
         """Test a known error exit."""
         logger = logging.getLogger("known_error")
