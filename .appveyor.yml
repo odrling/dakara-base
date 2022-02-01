@@ -2,6 +2,7 @@ version: 1.4.0-dev-{build}
 
 image:
   - Ubuntu
+  - macos
   - Visual Studio 2019
 
 build: false
@@ -59,7 +60,45 @@ for:
 
   - matrix:
       only:
+        - image: macos
+          PYTHON: "3.9"
+
+    cache:
+      # enable cache for Python dependencies
+      - "$HOME/Library/Caches/pip"
+
+    init:
+      # load virtual env
+      - "source $HOME/venv$PYTHON/bin/activate"
+
+      # check current python version
+      - "python --version"
+
+    install:
+      # the features used in setup.cfg require a recent enough version of setuptools
+      - "python -m pip install --upgrade \"setuptools>=40.0\""
+
+      # install dependencies for test
+      - "python -m pip install -e \".[tests]\""
+
+    test_script:
+      # run tests
+      - "python -m coverage run -m pytest -v"
+
+      # run code formatting tests
+      - "python -m black . --check"
+      - "python -m isort . --check"
+      - "python -m flake8"
+
+    after_test:
+      # upload coverage stats to codecov.io
+      # codecov token is stored in appveyor settings
+      - "python -m codecov"
+
+  - matrix:
+      only:
         - image: Visual Studio 2019
+          PYTHON: "3.9"
 
     cache:
       # enable cache for Python dependencies

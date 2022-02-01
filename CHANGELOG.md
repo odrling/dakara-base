@@ -36,6 +36,8 @@
   Config can be loaded from a file (once).
   When accessing a value, it is first searched in environment variables, then in stored values.
 - Methods that add a message to a raised exception can be generated from `exceptions.generate_exception_handler`.
+- Application directories are available with the object `directory.directories`.
+- Mac OS support.
 
 ### Changed
 
@@ -54,7 +56,7 @@
 
 ### Changed
 
-- Enpoint for HTTP client authenticated is stored in `dakara_base.http_client.HTTPClient.AUTHENTICATE_ENDPOINT` and can be edited.
+- Endpoint for HTTP client authenticated is stored in `dakara_base.http_client.HTTPClient.AUTHENTICATE_ENDPOINT` and can be edited.
   Default value was updated to `accounts/login/`.
 
 ### Removed
