@@ -15,7 +15,10 @@ defines `handle_all_exceptions` that can be used on `__main__` module to catch
 all program executions.
 """
 
+import logging
 from contextlib import contextmanager
+
+logger = logging.getLogger(__name__)
 
 
 class DakaraError(Exception):
@@ -57,20 +60,20 @@ def generate_exception_handler(exception_class, error_message):
 
 
 @contextmanager
-def handle_all_exceptions(logger, bugtracker_url, debug=False):
+def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
     """Handle all exceptions and yield a return value.
 
     >>> with handle_all_exceptions(
-    ...    logging,
     ...    "https://www.example.com/bugtracker"
     ... ) as exit_value:
     ...    # your program here
     >>> exit(exit_value["value"])
 
     Args:
-        logger (logging.Logger): Logger.
         bugtracker_url (str): URL address of the bugtracker, displayed on
             unexpected exceptions.
+        logger (logging.Logger): Logger. If not given, will take the current
+            module's logger.
         debug (bool): If True, known and unknown exceptions will be directly
             raised.
 
