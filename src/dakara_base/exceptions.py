@@ -59,6 +59,13 @@ def generate_exception_handler(exception_class, error_message):
     return function
 
 
+class ExitValue:
+    """Container for the exit value."""
+
+    def __init__(self):
+        self.value = 0
+
+
 @contextmanager
 def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
     """Handle all exceptions and yield a return value.
@@ -67,7 +74,7 @@ def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
     ...    "https://www.example.com/bugtracker"
     ... ) as exit_value:
     ...    # your program here
-    >>> exit(exit_value["value"])
+    >>> exit(exit_value.value)
 
     Args:
         bugtracker_url (str): URL address of the bugtracker, displayed on
@@ -78,21 +85,22 @@ def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
             raised.
 
     Yield:
-        dict: Container with the return value, stored in key "value". If no
-        error happened, the return value is 0, in case of Ctrl+C, it is 255, in
-        case of a known error, it is 1, in case of an unknown error, it is 2.
+        ExitValue: Container with the return value, stored in attribute
+        "value". If no error happened, the return value is 0, in case of
+        Ctrl+C, it is 255, in case of a known error, it is 1, in case of an
+        unknown error, it is 2.
     """
-    container = {"value": 0}
+    container = ExitValue()
 
     try:
         yield container
 
     except KeyboardInterrupt:
-        container["value"] = 255
+        container.value = 255
         logger.info("Quit by user")
 
     except DakaraError as error:
-        container["value"] = 1
+        container.value = 1
 
         # directly re-raise the error in debug mode
         if debug:
@@ -102,7 +110,7 @@ def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
         logger.critical(error)
 
     except BaseException as error:
-        container["value"] = 2
+        container.value = 2
 
         # directly re-raise the error in debug mode
         if debug:

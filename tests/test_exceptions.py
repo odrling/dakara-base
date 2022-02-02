@@ -24,7 +24,7 @@ class HandleAllExceptionsTestCase(TestCase):
         with handle_all_exceptions("url") as exit_value:
             pass
 
-        self.assertEqual(exit_value["value"], 0)
+        self.assertEqual(exit_value.value, 0)
 
     def test_keyboard_interrupt(self):
         """Test a Ctrl+C exit."""
@@ -32,7 +32,7 @@ class HandleAllExceptionsTestCase(TestCase):
             with handle_all_exceptions("url") as exit_value:
                 raise KeyboardInterrupt
 
-        self.assertEqual(exit_value["value"], 255)
+        self.assertEqual(exit_value.value, 255)
         self.assertListEqual(
             logger.output, ["INFO:dakara_base.exceptions:Quit by user"]
         )
@@ -46,7 +46,7 @@ class HandleAllExceptionsTestCase(TestCase):
             except KeyboardInterrupt:
                 pass
 
-        self.assertEqual(exit_value["value"], 0)
+        self.assertEqual(exit_value.value, 0)
 
     def test_known_error(self):
         """Test a known error exit."""
@@ -54,7 +54,7 @@ class HandleAllExceptionsTestCase(TestCase):
             with handle_all_exceptions("url") as exit_value:
                 raise DakaraError("error")
 
-        self.assertEqual(exit_value["value"], 1)
+        self.assertEqual(exit_value.value, 1)
         self.assertListEqual(logger.output, ["CRITICAL:dakara_base.exceptions:error"])
 
     def test_known_error_debug(self):
@@ -63,7 +63,7 @@ class HandleAllExceptionsTestCase(TestCase):
             with handle_all_exceptions("url", debug=True) as exit_value:
                 raise DakaraError("error")
 
-        self.assertEqual(exit_value["value"], 1)
+        self.assertEqual(exit_value.value, 1)
 
     def test_unknown_error(self):
         """Test an unknown error exit."""
@@ -71,7 +71,7 @@ class HandleAllExceptionsTestCase(TestCase):
             with handle_all_exceptions("url") as exit_value:
                 raise Exception("error")
 
-        self.assertEqual(exit_value["value"], 2)
+        self.assertEqual(exit_value.value, 2)
         self.assertListEqual(
             logger.output,
             [ANY, "CRITICAL:dakara_base.exceptions:Please fill a bug report at 'url'"],
@@ -83,4 +83,4 @@ class HandleAllExceptionsTestCase(TestCase):
             with handle_all_exceptions("url", debug=True) as exit_value:
                 raise Exception("error")
 
-        self.assertEqual(exit_value["value"], 2)
+        self.assertEqual(exit_value.value, 2)
