@@ -12,7 +12,7 @@ bugs.
 It defines `generate_exception_handler` that allows to generate functions which
 will catch an exception, add a custom error message and re-raise it. It also
 defines `handle_all_exceptions` that can be used on `__main__` module to catch
-all program executions.
+all program exceptions.
 """
 
 import logging
@@ -39,13 +39,16 @@ def generate_exception_handler(exception_class, error_message):
     ...         raise MyError("initial message")
     ... except MyError as error:
     ...     pass
-    >>> assert str(error) == "initial message\nextra message"
+    >>> assert str(error).split() == ["initial message", "extra message"]
 
     Args:
         exception_class (Exception or list of Exception): Exception class to
             catch.
         error_message (str): Error message to display. It will be displayed on
             the next line after the exception message.
+
+    Returns:
+        function: Context manager function.
     """
 
     @contextmanager
@@ -60,7 +63,11 @@ def generate_exception_handler(exception_class, error_message):
 
 
 class ExitValue:
-    """Container for the exit value."""
+    """Container for the exit value.
+
+    Attributes:
+        value (int): Exit value, default to 0.
+    """
 
     def __init__(self):
         self.value = 0
@@ -68,7 +75,7 @@ class ExitValue:
 
 @contextmanager
 def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
-    """Handle all exceptions and yield a return value.
+    """Handle all exceptions and yield an exit value.
 
     >>> with handle_all_exceptions(
     ...    "https://www.example.com/bugtracker"
@@ -84,7 +91,7 @@ def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
         debug (bool): If True, known and unknown exceptions will be directly
             raised.
 
-    Yield:
+    Yields:
         ExitValue: Container with the return value, stored in attribute
         "value". If no error happened, the return value is 0, in case of
         Ctrl+C, it is 255, in case of a known error, it is 1, in case of an

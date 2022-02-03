@@ -87,34 +87,34 @@ class Config(UserDict):
 
     >>> conf = Config("prefix", {"key1": "foo", "key2": "bar"})
     >>> conf
-    ... {"key1": "foo", "key2": "bar"}
+    {"key1": "foo", "key2": "bar"}
     >>> conf.get("key1")
-    ... "foo"
+    "foo"
     >>> # let's say PREFIX_KEY2 is an environment variable with value "spam"
     >>> conf.get("key2")
-    ... "spam"
+    "spam"
 
-    Values of nested Config objects will have accumulated prefixes
+    Values of nested `Config` objects will have accumulated prefixes
     (separated by an underscore):
 
     >>> conf = Config("prefix", {"sub": {"key": "foo"}})
     >>> # let's say PREFIX_SUB_KEY is an environment variable with value "bar"
     >>> cong.get("sub").get("key")
-    ... "bar"
+    "bar"
 
     By default, the value obtained from the environment is a string. If a
     default value is provided to `get`, the returned value from the environment
-    will be casted to the type of that default value:
+    will be parsed to the type of that default value:
 
     >>> conf = Config("prefix", {"key": 42})
     >>> # let's say PREFIX_KEY is an environment variable with value "39"
     >>> conf.get("key")
-    ... "39"
+    "39"
     >>> cong.get("key", 0)
-    ... 39
+    39
 
     You can check `environs.Env` for the supported types. Note stored values
-    are casted from the config file by the YAML library.
+    are parsed from the config file by the YAML library.
 
     Attributes:
         prefix (str): Prefix to use when looking for value in environment
@@ -163,7 +163,7 @@ class Config(UserDict):
         """Set log level of the config to debug.
 
         Args:
-            debug (bool): If True (default), set log level to "DEBUG".
+            debug (bool): If `True` (default), set log level to "DEBUG".
         """
         if debug:
             self.data["loglevel"] = "DEBUG"
@@ -240,9 +240,9 @@ class Config(UserDict):
             return super().__getitem__(key)
 
     def get(self, key, default=None):
-        """Return the value for key.
+        """Return the value for the provided key.
 
-        If a default value is provided, it will determine the class of the
+        If a default value is provided, it will determine the type of the
         returned value when getting it from the environment variables.
 
         Args:
@@ -289,7 +289,7 @@ def set_loglevel(config):
     """Set logger level.
 
     Arguments:
-        config (dict): Dictionary of the config.
+        config (Config): Dictionary of the config.
     """
     loglevel = config.get("loglevel", LOG_LEVEL)
     coloredlogs.set_level(loglevel)
