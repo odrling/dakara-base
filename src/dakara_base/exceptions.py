@@ -25,11 +25,20 @@ class DakaraError(Exception):
     """Basic exception class for the project."""
 
 
+class DakaraHandledError(Exception):
+    """Basic exception class for errors that have been handled.
+
+    Must be used in multiple inheritance.
+    """
+
+
 def generate_exception_handler(exception_class, error_message):
     """Generate a context manager to take care of given exception.
 
-    It will add a custom message to an expected exception class. The exception
-    is then re-raised.
+    It will add a custom message to an expected exception class. An exception
+    derived from the caught exception (that can be a subclass of
+    `exception_class`) and from the generic `DakaraHandledError` is then
+    raised.
 
     >>> class MyError(Exception):
     ...     pass
@@ -40,6 +49,8 @@ def generate_exception_handler(exception_class, error_message):
     ... except MyError as error:
     ...     pass
     >>> assert str(error).split() == ["initial message", "extra message"]
+    >>> assert isinstance(error, MyError)
+    >>> assert isinstance(error, DakaraHandledError)
 
     Args:
         exception_class (Exception or list of Exception): Exception class to
@@ -57,7 +68,11 @@ def generate_exception_handler(exception_class, error_message):
             yield None
 
         except exception_class as error:
-            raise error.__class__("{}\n{}".format(error, error_message)) from error
+
+            class HandledError(error.__class__, DakaraHandledError):
+                pass
+
+            raise HandledError("{}\n{}".format(error, error_message)) from error
 
     return function
 
@@ -76,6 +91,8 @@ class ExitValue:
 @contextmanager
 def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
     """Handle all exceptions and yield an exit value.
+
+    Unless in debug mode, no exceptions will be raised.
 
     >>> import sys
     >>> with handle_all_exceptions(

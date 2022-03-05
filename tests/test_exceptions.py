@@ -3,6 +3,7 @@ from unittest.mock import ANY
 
 from dakara_base.exceptions import (
     DakaraError,
+    DakaraHandledError,
     generate_exception_handler,
     handle_all_exceptions,
 )
@@ -13,9 +14,14 @@ class GenerateExceptionHandleTestCase(TestCase):
         """Test to generate and use an exception handler"""
         handler = generate_exception_handler(DakaraError, "handler message")
 
-        with self.assertRaisesRegex(DakaraError, r"initial message\nhandler message"):
+        with self.assertRaisesRegex(
+            DakaraError, r"initial message\nhandler message"
+        ) as cm:
             with handler():
                 raise DakaraError("initial message")
+
+        self.assertIsInstance(cm.exception, DakaraError)
+        self.assertIsInstance(cm.exception, DakaraHandledError)
 
 
 class HandleAllExceptionsTestCase(TestCase):
