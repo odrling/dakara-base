@@ -77,11 +77,12 @@ class ExitValue:
 def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
     """Handle all exceptions and yield an exit value.
 
+    >>> import sys
     >>> with handle_all_exceptions(
     ...    "https://www.example.com/bugtracker"
     ... ) as exit_value:
     ...    # your program here
-    >>> exit(exit_value.value)
+    >>> sys.exit(exit_value.value)
 
     Args:
         bugtracker_url (str): URL address of the bugtracker, displayed on
