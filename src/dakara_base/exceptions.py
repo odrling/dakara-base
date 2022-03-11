@@ -141,6 +141,6 @@ def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
         if debug:
             raise
 
-        # re-raise it and show a special message otherwise
-        logger.exception("Unexpected error: {}".format(error))
-        logger.critical("Please fill a bug report at '{}'".format(bugtracker_url))
+        # show the error and a special message otherwise
+        logger.exception("Unexpected error: %s", error)
+        logger.critical("Please fill a bug report at '%s'", bugtracker_url)
