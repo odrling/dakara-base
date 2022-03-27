@@ -72,14 +72,13 @@ def connected(fun):
 
 
 class WebSocketClient(WorkerSafeTimer):
-    """WebSocket client..
+    """WebSocket client.
 
     It communicates with WebSocket messages of a fixed format. The message is a
-    JSON string representing an object containing two keys:
-        * `type` (str): The type of the message, mandatory.
-        * `data` (anything): The content of the message, optional. When sending
-            a message, the data cannot be a lone None: In this case the `data`
-            key is not present in the message.
+    JSON string representing a dictionary containing two keys: `type` (str)
+    the type of the message, mandatory; and `data` (anything) the content of
+    the message, optional. When sending a message, the data cannot be a lone
+    None: in this case the key is not present in the message.
 
     On receiving a message, the client will call the method corresponding to
     its type, which name is `receive_<type of the message here>`. The method

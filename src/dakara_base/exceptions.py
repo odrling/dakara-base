@@ -111,7 +111,7 @@ def handle_all_exceptions(bugtracker_url, logger=logger, debug=False):
 
     Yields:
         ExitValue: Container with the return value, stored in attribute
-        "value". If no error happened, the return value is 0, in case of
+        `value`. If no error happened, the return value is 0, in case of
         Ctrl+C, it is 255, in case of a known error, it is 1, in case of an
         unknown error, it is 2.
     """

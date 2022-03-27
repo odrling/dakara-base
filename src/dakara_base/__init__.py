@@ -1,3 +1,32 @@
-# this file is automatically updated by bump_version.sh, do not edit it!
-__version__ = "1.4.0-dev"
-__date__ = "2021-04-10"
+"""
+Dakara base.
+
+Collection of tools and helper modules for the Dakara Project.
+"""
+
+from dakara_base import (
+    config,
+    directory,
+    exceptions,
+    http_client,
+    progress_bar,
+    safe_workers,
+    utils,
+    version,
+    websocket_client,
+)
+from dakara_base.version import __date__, __version__
+
+__all__ = [
+    "config",
+    "directory",
+    "exceptions",
+    "http_client",
+    "progress_bar",
+    "safe_workers",
+    "utils",
+    "version",
+    "websocket_client",
+    "__version__",
+    "__date__",
+]
