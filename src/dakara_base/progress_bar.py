@@ -48,6 +48,8 @@ class ShrinkableTextWidget(WidgetBase):
     """
 
     def __init__(self, text, ratio=0.25):
+        super().__init__()
+
         assert len(text) > 5, "Text too short"
         self.text = text
         self.ratio = ratio

@@ -87,7 +87,7 @@ class ProgressBarTestCase(TestCase):
         self.assertEqual(
             lines,
             [
-                "some text here   N/A% |    | Elapsed Time: 0:00:00 ETA:  --:--:--",
+                "some text here     0% |    | Elapsed Time: 0:00:00 ETA:  --:--:--",
                 "some text here   100% |####| Elapsed Time: 0:00:00 Time:  0:00:00",
                 "some text here   100% |####| Elapsed Time: 0:00:00 Time:  0:00:00",
             ],
@@ -107,7 +107,7 @@ class ProgressBarTestCase(TestCase):
         self.assertEqual(
             lines,
             [
-                "N/A% |                     | Elapsed Time: 0:00:00 ETA:  --:--:--",
+                "  0% |                     | Elapsed Time: 0:00:00 ETA:  --:--:--",
                 "100% |#####################| Elapsed Time: 0:00:00 Time:  0:00:00",
                 "100% |#####################| Elapsed Time: 0:00:00 Time:  0:00:00",
             ],
