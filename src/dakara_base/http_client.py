@@ -17,6 +17,7 @@ JSON messages.  It is pretty straightforward to use:
 
 
 import logging
+from functools import wraps
 
 import requests
 from furl import furl
@@ -40,6 +41,7 @@ def authenticated(fun):
         function: Decorated function.
     """
 
+    @wraps(fun)
     def call(self, *args, **kwargs):
         if self.token is None:
             raise NotAuthenticatedError("No connection established")

@@ -32,6 +32,7 @@ be optained by the `HTTPClient` class from the `http_client` module, with the
 
 import json
 import logging
+from functools import wraps
 
 from websocket import (
     WebSocketApp,
@@ -62,6 +63,7 @@ def connected(fun):
         function: Decorated function.
     """
 
+    @wraps(fun)
     def call(self, *args, **kwargs):
         if self.websocket is None:
             raise NotConnectedError("No connection established")
