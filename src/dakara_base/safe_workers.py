@@ -387,7 +387,7 @@ class WorkerSafeTimer(BaseWorker):
 
         logger.debug(
             "Closing worker safe timer thread '%s' (%s)",
-            self.timer.getName(),
+            self.timer.name,
             self.__class__.__name__,
         )
 
@@ -402,7 +402,7 @@ class WorkerSafeTimer(BaseWorker):
 
         logger.debug(
             "Closed worker safe timer thread '%s' (%s)",
-            self.timer.getName(),
+            self.timer.name,
             self.__class__.__name__,
         )
 
@@ -471,7 +471,7 @@ class WorkerSafeThread(BaseWorker):
 
         logger.debug(
             "Closing worker safe thread '%s' (%s)",
-            self.thread.getName(),
+            self.thread.name,
             self.__class__.__name__,
         )
 
@@ -483,7 +483,7 @@ class WorkerSafeThread(BaseWorker):
 
         logger.debug(
             "Closed worker safe thread '%s' (%s)",
-            self.thread.getName(),
+            self.thread.name,
             self.__class__.__name__,
         )
 
