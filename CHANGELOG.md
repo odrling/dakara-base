@@ -36,6 +36,7 @@
   Config can be loaded from a file (once).
   When accessing a value, it is first searched in environment variables, then in stored values.
 - Methods that add a message to a raised exception can be generated from `exceptions.generate_exception_handler`.
+- All exceptions of the program can be caught in `__main__.py` with `exceptions.handle_all_exceptions`.
 - Application directories are available with the object `directory.directories`.
 - Mac OS support.
 
