@@ -55,7 +55,8 @@ class HTTPClient:
     The API must use JSON for message content.
 
     The client uses a token credential policy only and authenticates with a
-    traditional login/password mechanism.
+    traditional login/password mechanism. If a token is provided, it will be
+    used without trying to authenticate.
 
     Attributes:
         AUTHENTICATE_ENDPOINT (str): Endpoint for authentication.
