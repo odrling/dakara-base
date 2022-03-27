@@ -50,7 +50,7 @@
 
 ### Removed
 
-- Dropped Python 3.5 support.
+- Dropped Python 3.5 and 3.6 support.
 
 ## 1.3.0 - 2021-04-10
 

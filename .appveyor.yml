@@ -16,10 +16,10 @@ branches:
 environment:
   # setup tests matrix
   matrix:
-    - PYTHON: "3.6"
     - PYTHON: "3.7"
     - PYTHON: "3.8"
     - PYTHON: "3.9"
+    - PYTHON: "3.10"
 
 for:
   - matrix:
@@ -61,7 +61,7 @@ for:
   - matrix:
       only:
         - image: macos
-          PYTHON: "3.9"
+          PYTHON: "3.10"
 
     cache:
       # enable cache for Python dependencies
@@ -98,7 +98,7 @@ for:
   - matrix:
       only:
         - image: Visual Studio 2019
-          PYTHON: "3.9"
+          PYTHON: "3.10"
 
     cache:
       # enable cache for Python dependencies
