@@ -32,6 +32,7 @@ True
 
 import logging
 import sys
+from functools import wraps
 from queue import Empty, Queue
 from threading import Event, Thread, Timer
 
@@ -50,6 +51,7 @@ def safe(fun):
     class (or inherited).
     """
 
+    @wraps(fun)
     def call(self, *args, **kwargs):
         # check the target's class is a safe thread or a safe worker
         assert isinstance(self, (BaseSafeThread, BaseWorker)), (
