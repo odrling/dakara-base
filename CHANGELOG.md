@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Fixed custom decorators hiding functions docstrings.
+
 ## 1.4.0 - 2022-03-27
 
 ### Added
