@@ -52,4 +52,4 @@ class AppDirsPath(AppDirs):
         return Path(super().user_state_dir)
 
 
-directories = AppDirsPath(APP_NAME, PROJECT_NAME)
+directories = AppDirsPath(APP_NAME, PROJECT_NAME, roaming=True)
