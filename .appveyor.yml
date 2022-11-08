@@ -20,6 +20,9 @@ environment:
     - PYTHON: "3.8"
     - PYTHON: "3.9"
     - PYTHON: "3.10"
+      MAC_TEST: true
+    - PYTHON: "3.11"
+      WINDOWS_TEST: true
 
 for:
   - matrix:
@@ -61,7 +64,7 @@ for:
   - matrix:
       only:
         - image: macos
-          PYTHON: "3.10"
+          MAC_TEST: true
 
     cache:
       # enable cache for Python dependencies
@@ -98,7 +101,7 @@ for:
   - matrix:
       only:
         - image: Visual Studio 2019
-          PYTHON: "3.10"
+          WINDOWS_TEST: true
 
     cache:
       # enable cache for Python dependencies
