@@ -30,6 +30,8 @@
 
 ## Unreleased
 
+## 1.4.2 - 2022-11-19
+
 ### Added
 
 - Support Python 3.11.
