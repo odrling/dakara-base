@@ -8,8 +8,10 @@ try:
 except ImportError:
     from importlib_resources import path
 
+import shutil
+from pathlib import Path
+
 from environs import Env
-from path import Path
 from yaml.parser import ParserError
 
 from dakara_base.config import (
@@ -279,9 +281,9 @@ class SetLoglevelTestCase(TestCase):
         mocked_set_level.assert_called_with("INFO")
 
 
-@patch.object(Path, "copyfile")
+@patch.object(shutil, "copy")
 @patch.object(Path, "exists")
-@patch.object(Path, "mkdir_p")
+@patch.object(Path, "mkdir")
 @patch(
     "dakara_base.directory.AppDirsPath.user_config_dir",
     new_callable=PropertyMock(return_value=Path("path") / "to" / "directory"),
@@ -296,7 +298,7 @@ class CreateConfigFileTestCase(TestCase):
         self,
         mocked_path,
         mocked_user_config_dir,
-        mocked_mkdir_p,
+        mocked_mkdir,
         mocked_exists,
         mocked_copyfile,
     ):
@@ -304,16 +306,19 @@ class CreateConfigFileTestCase(TestCase):
         # setup mocks
         mocked_exists.return_value = False
 
+        module = "module.resources"
+        filename = "config.yaml"
         # call the function
         with self.assertLogs("dakara_base.config") as logger:
             create_config_file("module.resources", "config.yaml")
 
         # assert the call
         mocked_path.assert_called_with("module.resources", "config.yaml")
-        mocked_mkdir_p.assert_called_with()
+        mocked_mkdir.assert_called_with(parents=True, exist_ok=True)
         mocked_exists.assert_called_with()
         mocked_copyfile.assert_called_with(
-            Path("path") / "to" / "directory" / "config.yaml"
+            Path(mocked_path(module, filename).__enter__()),
+            Path("path") / "to" / "directory" / "config.yaml",
         )
 
         # assert the logs
@@ -332,7 +337,7 @@ class CreateConfigFileTestCase(TestCase):
         mocked_input,
         mocked_path,
         mocked_user_config_dir,
-        mocked_mkdir_p,
+        mocked_mkdir,
         mocked_exists,
         mocked_copyfile,
     ):
@@ -358,7 +363,7 @@ class CreateConfigFileTestCase(TestCase):
         mocked_input,
         mocked_path,
         mocked_user_config_dir,
-        mocked_mkdir_p,
+        mocked_mkdir,
         mocked_exists,
         mocked_copyfile,
     ):
@@ -379,17 +384,20 @@ class CreateConfigFileTestCase(TestCase):
         mocked_input,
         mocked_path,
         mocked_user_config_dir,
-        mocked_mkdir_p,
+        mocked_mkdir,
         mocked_exists,
         mocked_copyfile,
     ):
         """Test create the config file in a non empty directory with force overwrite."""
         # call the function
-        create_config_file("module.resources", "config.yaml", force=True)
+        module = "module.resources"
+        filename = "config.yaml"
+        create_config_file(module, filename, force=True)
 
         # assert the call
         mocked_exists.assert_not_called()
         mocked_input.assert_not_called()
         mocked_copyfile.assert_called_with(
-            Path("path") / "to" / "directory" / "config.yaml"
+            Path(mocked_path(module, filename).__enter__()),
+            Path("path") / "to" / "directory" / "config.yaml",
         )

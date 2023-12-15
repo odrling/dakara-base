@@ -3,7 +3,7 @@
 This module gives the class `Config` that handles the config. It can load
 values from a YAML file and from environment variables:
 
->>> from path import Path
+>>> from pathlib import Path
 >>> config = Config("DAKARA")
 >>> config.load_file(Path("path/to/file.yaml"))
 >>> config.set_debug()
@@ -17,7 +17,7 @@ before reading the config, as `load_config` needs a logger, then call the
 latter one:
 
 >>> create_logger()
->>> from path import Path
+>>> from pathlib import Path
 >>> config = Config("DAKARA")
 >>> config.load_file(Path("path/to/file.yaml"))
 >>> set_loglevel(config)
@@ -32,15 +32,15 @@ the configuration directory:
 >>> create_config_file("module.resources", "my_config.yaml")
 """
 
-
 import logging
+import shutil
 from collections import UserDict
+from pathlib import Path
 
 import coloredlogs
 import progressbar
 import yaml
 from environs import Env, EnvError
-from path import Path
 
 from .utils import strtobool
 
@@ -79,7 +79,7 @@ class Config(UserDict):
     Values can be loaded from a file, previous values stored in the config
     would be discarded.
 
-    >>> from path import Path
+    >>> from pathlib import Path
     >>> conf = Config("prefix")
     >>> conf.load_file(Path("config.yaml"))
 
@@ -194,7 +194,7 @@ class Config(UserDict):
         """Load config from a given YAML file.
 
         Args:
-            config_path (path.Path): Path to the config file.
+            config_path (pathlib.Path): Path to the config file.
 
         Raises:
             ConfigNotFoundError: If the config file cannot be open.
@@ -296,7 +296,7 @@ def set_loglevel(config):
     coloredlogs.set_level(loglevel)
 
 
-def create_config_file(resource, filename, force=False):
+def create_config_file(resource: str, filename: str, force: bool = False):
     """Create a new config file in user directory.
 
     Args:
@@ -311,7 +311,7 @@ def create_config_file(resource, filename, force=False):
         destination = directories.user_config_dir / filename
 
         # create directory
-        destination.dirname().mkdir_p()
+        destination.parent.mkdir(parents=True, exist_ok=True)
 
         # check destination does not exist
         if not force and destination.exists():
@@ -323,7 +323,7 @@ def create_config_file(resource, filename, force=False):
                 return
 
         # copy file
-        origin.copyfile(destination)
+        shutil.copy(origin, destination)
         logger.info("Config created in '{}'".format(destination))
 
 
