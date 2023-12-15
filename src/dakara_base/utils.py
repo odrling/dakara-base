@@ -133,7 +133,7 @@ class URLParameterError(DakaraError, ValueError):
 
 def strtobool(input_value: str, default: bool = False) -> bool:
     """
-        Convert user input to a boolean
+    Convert user input to a boolean
     """
     input_value = input_value.lower()
 

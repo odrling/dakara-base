@@ -13,7 +13,8 @@ objects:
 >>> type(directories.user_config_dir)
 ... path.Path
 """
-from path import Path
+from pathlib import Path
+
 from platformdirs import PlatformDirs as AppDirs
 
 APP_NAME = "dakara"
