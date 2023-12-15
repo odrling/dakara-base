@@ -129,3 +129,18 @@ def create_url(
 
 class URLParameterError(DakaraError, ValueError):
     """Error raised when server parameters are unproperly set."""
+
+
+def strtobool(input_value: str, default: bool = False) -> bool:
+    """
+        Convert user input to a boolean
+    """
+    input_value = input_value.lower()
+
+    if input_value in ("y", "yes"):
+        return True
+
+    if input_value in ("n", "no"):
+        return False
+
+    return default
