@@ -35,13 +35,14 @@ the configuration directory:
 
 import logging
 from collections import UserDict
-from distutils.util import strtobool
 
 import coloredlogs
 import progressbar
 import yaml
 from environs import Env, EnvError
 from path import Path
+
+from .utils import strtobool
 
 try:
     from importlib.resources import path
@@ -314,13 +315,9 @@ def create_config_file(resource, filename, force=False):
 
         # check destination does not exist
         if not force and destination.exists():
-            try:
-                result = strtobool(
-                    input("{} already exists, overwrite? [y/N] ".format(destination))
-                )
-
-            except ValueError:
-                result = False
+            result = strtobool(
+                input("{} already exists, overwrite? [y/N] ".format(destination))
+            )
 
             if not result:
                 return
