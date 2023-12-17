@@ -40,6 +40,7 @@ from pathlib import Path
 import coloredlogs
 import progressbar
 import yaml
+import yaml.parser
 from environs import Env, EnvError
 
 from .utils import strtobool
