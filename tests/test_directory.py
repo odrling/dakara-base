@@ -2,11 +2,12 @@ from pathlib import Path
 from unittest import TestCase
 
 from dakara_base.directory import AppDirsPath
+from platformdirs import PlatformDirs
 
 
 class AppDirsPathTestCase(TestCase):
     def test_properties(self):
-        appdirs = AppDirsPath("appname", "authorname")
+        appdirs = AppDirsPath(PlatformDirs("appname", "authorname"))
 
         self.assertIsInstance(appdirs.site_config_dir, Path)
         self.assertIsInstance(appdirs.site_data_dir, Path)
