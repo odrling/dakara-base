@@ -19,7 +19,7 @@ jobs:
           cache: 'pip'
 
       - name: install dependencies
-        run: pip install -U setuptools && pip install -e '.[tests]'
+        run: pip install -e '.[tests]'
 
       - name: run tests
         run: python -m pytest -v --cov src
