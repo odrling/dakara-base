@@ -1,4 +1,4 @@
-name: Dakara base tests
+name: Tests
 
 on:
   pull_request:
