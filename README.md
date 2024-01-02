@@ -1,7 +1,7 @@
 # Dakara Base
 
 <!-- Badges are displayed for the develop branch -->
-[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/50fay6bhsgxispcw/branch/develop?svg=true)](https://ci.appveyor.com/project/neraste/dakara-base/branch/develop)
+[![Tests](https://github.com/DakaraProject/dakara-base/actions/workflows/ci.yml/badge.svg)](https://github.com/DakaraProject/dakara-base/actions/workflows/ci.yml)
 [![Codecov coverage analysis](https://codecov.io/gh/DakaraProject/dakara-base/branch/develop/graph/badge.svg)](https://codecov.io/gh/DakaraProject/dakara-base)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![PyPI version](https://badge.fury.io/py/dakarabase.svg)](https://pypi.python.org/pypi/dakarabase/)
