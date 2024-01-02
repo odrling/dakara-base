@@ -50,7 +50,7 @@ version = {attr = "dakara_base.version.__version__" }
 where = ["src"]
 
 [project.optional-dependencies]
-tests = [
+dev = [
         "black>=22.3.0,<22.4.0",
         "codecov>=2.1.12,<2.2.0",
         "isort>=5.10.1,<5.11.0",
