@@ -98,12 +98,14 @@ class StrtoboolTests(TestCase):
     def test_y(self):
         """Test True representations"""
         for uinput in ("y", "yes", "Y", "YES"):
-            self.assertTrue(strtobool(uinput))
+            self.assertTrue(strtobool(uinput), f"strtobool({uinput!r}) is not True")
 
     def test_n(self):
         """Test False representations"""
         for uinput in ("n", "no", "N", "NO"):
-            self.assertFalse(strtobool(uinput, default=True))
+            self.assertFalse(
+                strtobool(uinput, default=True), f"strtobool({uinput!r}) is not False"
+            )
 
     def test_default(self):
         """Test default value"""
