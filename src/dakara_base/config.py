@@ -42,8 +42,6 @@ import yaml
 from environs import Env, EnvError
 from path import Path
 
-from .utils import strtobool
-
 try:
     from importlib.resources import path
 
@@ -52,6 +50,7 @@ except ImportError:
 
 from dakara_base.directory import directories
 from dakara_base.exceptions import DakaraError
+from dakara_base.utils import strtobool
 
 LOG_FORMAT = "[%(asctime)s] %(name)s %(levelname)s %(message)s"
 LOG_LEVEL = "INFO"
