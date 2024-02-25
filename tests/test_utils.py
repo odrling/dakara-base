@@ -96,14 +96,16 @@ class CreateUrlTestCase(TestCase):
 
 class StrtoboolTests(TestCase):
     def test_y(self):
-        """Test that y returns True"""
+        """Test True representations"""
         for uinput in ("y", "yes", "Y", "YES"):
             self.assertTrue(strtobool(uinput))
 
     def test_n(self):
+        """Test False representations"""
         for uinput in ("n", "no", "N", "NO"):
             self.assertFalse(strtobool(uinput, default=True))
 
     def test_default(self):
+        """Test default value"""
         self.assertTrue(strtobool("not a known input", default=True))
         self.assertFalse(strtobool("not a known input", default=False))
