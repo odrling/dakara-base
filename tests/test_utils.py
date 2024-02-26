@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from dakara_base.utils import URLParameterError, create_url, truncate_message
+from dakara_base.utils import URLParameterError, create_url, strtobool, truncate_message
 
 
 class TruncateMessageTestCase(TestCase):
@@ -92,3 +92,22 @@ class CreateUrlTestCase(TestCase):
         mocked_furl.side_effect = ValueError("error")
         with self.assertRaises(URLParameterError):
             create_url(host="www.example.com", scheme_no_ssl="http")
+
+
+class StrtoboolTests(TestCase):
+    def test_y(self):
+        """Test True representations"""
+        for uinput in ("y", "yes", "Y", "YES"):
+            self.assertTrue(strtobool(uinput), f"strtobool({uinput!r}) is not True")
+
+    def test_n(self):
+        """Test False representations"""
+        for uinput in ("n", "no", "N", "NO"):
+            self.assertFalse(
+                strtobool(uinput, default=True), f"strtobool({uinput!r}) is not False"
+            )
+
+    def test_default(self):
+        """Test default value"""
+        self.assertTrue(strtobool("not a known input", default=True))
+        self.assertFalse(strtobool("not a known input", default=False))

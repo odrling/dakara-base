@@ -35,7 +35,6 @@ the configuration directory:
 
 import logging
 from collections import UserDict
-from distutils.util import strtobool
 
 import coloredlogs
 import progressbar
@@ -52,6 +51,7 @@ except ImportError:
 
 from dakara_base.directory import directories
 from dakara_base.exceptions import DakaraError
+from dakara_base.utils import strtobool
 
 LOG_FORMAT = "[%(asctime)s] %(name)s %(levelname)s %(message)s"
 LOG_LEVEL = "INFO"
@@ -315,13 +315,9 @@ def create_config_file(resource, filename, force=False):
 
         # check destination does not exist
         if not force and destination.exists():
-            try:
-                result = strtobool(
-                    input("{} already exists, overwrite? [y/N] ".format(destination))
-                )
-
-            except ValueError:
-                result = False
+            result = strtobool(
+                input("{} already exists, overwrite? [y/N] ".format(destination))
+            )
 
             if not result:
                 return
