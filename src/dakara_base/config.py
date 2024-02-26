@@ -39,6 +39,7 @@ from collections import UserDict
 import coloredlogs
 import progressbar
 import yaml
+import yaml.parser
 from environs import Env, EnvError
 from path import Path
 
