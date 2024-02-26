@@ -30,6 +30,10 @@
 
 ## Unreleased
 
+### Added
+
+- Support Python 3.12.
+
 ### Removed
 
 - Dropped Python 3.7 support.
